@@ -14,11 +14,11 @@ export const template_routes = async (fastify: any) => {
     reply.code(201).send({ id: template.insertId, name, subject, body });
   });
 
-  fastify.get("/:id", async (request: any, reply: any) => {
-    const { id } = request.params;
+  fastify.get("/:template_code", async (request: any, reply: any) => {
+    const { template_code } = request.params;
     const [[template]] = await fastify.mysql.query(
-      "SELECT * FROM templates WHERE id = ?",
-      [id]
+      "SELECT * FROM templates WHERE name = ?",
+      [template_code]
     );
 
     reply.code(200).send(template);
