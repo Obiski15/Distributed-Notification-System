@@ -23,13 +23,71 @@ export class NotificationsService {
   constructor(
     @Inject('RABBITMQ_CONNECTION') private mqProvider: any,
     private readonly http: HttpService,
+    private readonly usersService: UsersService,
   ) {
     this.channel = mqProvider?.channel;
-    this.exchange = mqProvider?.exchange;
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    this.exchange = mqProvider?.exchange || process.env.RABBITMQ_EXCHANGE || 'notifications.direct';
+
+    // Use environment variables for Redis connection
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST || '127.0.0.1',
+      port: Number(process.env.REDIS_PORT) || 6379,
+      password: process.env.REDIS_PASSWORD || undefined,
+      retryStrategy: (times) => Math.min(times * 50, 2000), // retry with backoff
+    });
+
+    // Catch connection errors
+    this.redis.on('error', (err) => {
+      this.logger.error('[ioredis] Redis connection error:', err.message);
+    });
+
+    this.redis.on('connect', () => {
+      this.logger.log('[ioredis] Connected to Redis successfully');
+    });
   }
 
-  // Handle create notification request
+  // Safe Redis helpers
+  private async safeSet(key: string, value: any, expireSec?: number) {
+    try {
+      if (this.redis.status !== 'ready') {
+        this.logger.warn('[ioredis] Redis not ready, skipping set', key);
+        return;
+      }
+      if (expireSec) {
+        await this.redis.set(key, JSON.stringify(value), 'EX', expireSec);
+      } else {
+        await this.redis.set(key, JSON.stringify(value));
+      }
+    } catch (err) {
+      this.logger.error('[ioredis] Failed to set key', key, err.message);
+    }
+  }
+
+  private async safeGet(key: string) {
+    try {
+      if (this.redis.status !== 'ready') {
+        this.logger.warn('[ioredis] Redis not ready, skipping get', key);
+        return null;
+      }
+      const value = await this.redis.get(key);
+      return value ? JSON.parse(value) : null;
+    } catch (err) {
+      this.logger.error('[ioredis] Failed to get key', key, err.message);
+      return null;
+    }
+  }
+
+  private async safeLpush(key: string, value: any) {
+    try {
+      if (this.redis.status !== 'ready') return;
+      await this.redis.lpush(key, JSON.stringify(value));
+      await this.redis.ltrim(key, 0, 100);
+    } catch (err) {
+      this.logger.error('[ioredis] Failed to push list', key, err.message);
+    }
+  }
+
+  // Handle create notification
   async handleNotification(payload: CreateNotificationDto) {
     const {
       notification_type,
@@ -48,7 +106,7 @@ export class NotificationsService {
     const userUrl = `${process.env.USER_SERVICE_URL}/api/v1/users/${user_id}`;
     let userRes;
     try {
-      userRes = await lastValueFrom(this.http.get(userUrl));
+      userRes = await this.usersService.forwardToUserService('GET', `/api/v1/users/${user_id}`);
     } catch (err) {
       this.logger.error(
         'User service request failed',
@@ -110,7 +168,6 @@ export class NotificationsService {
       );
     }
 
-    // Publish to MQ
     try {
       await this.channel.publish(
         this.exchange,
@@ -153,8 +210,6 @@ export class NotificationsService {
     if (!notification_id)
       throw new BadRequestException('notification_id required');
 
-    const key = `notification:${notification_id}`;
-
     const record = {
       status,
       error: error || null,
@@ -177,6 +232,7 @@ export class NotificationsService {
     };
   }
 
+  // Get status
   async getStatus(request_id: string) {
     const key = `notification:${request_id}`;
     const raw = await this.redis.get(key);

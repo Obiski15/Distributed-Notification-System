@@ -51,21 +51,34 @@ services:
       - dns-network
 
   # Gateway Service
-  # gateway:
-  #   build:
-  #     context: ./gateway-fastify
-  #     dockerfile: Dockerfile
-  #   container_name: dns-gateway
-  #   ports:
-  #     - "3000:3000"
-  #   env_file:
-  #     - ./gateway-fastify/.env
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   networks:
-  #     - dns-network
-  #   restart: unless-stopped
+    gateway:
+    build:
+      context: ./services/gateway-service
+      dockerfile: Dockerfile
+    container_name: dns-gateway
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./gateway-fastify/.env
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ''  # if you use a password, set it here
+      TEMPLATE_SERVICE_URL: http://template-service:3002
+      USER_SERVICE_URL: http://user-service:8000
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      template-service:
+        condition: service_healthy
+      email-service:
+        condition: service_healthy
+    networks:
+      - dns-network
+    restart: unless-stopped
+
 
   # Email Service
   email-service:

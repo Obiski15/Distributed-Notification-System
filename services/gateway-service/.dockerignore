@@ -1,0 +1,25 @@
+node_modules
+
+dist
+
+# Environment files
+.env.local
+.env.example
+
+# Development files
+Dockerfile.dev
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+
+# System files
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log
+pnpm-debug.log
