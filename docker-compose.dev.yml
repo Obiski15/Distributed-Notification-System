@@ -1,5 +1,5 @@
 services:
-  gateway:
+  gateway-service:
     build:
       context: ./services/gateway-service
       dockerfile: Dockerfile.dev
@@ -7,8 +7,8 @@ services:
       - ./services/gateway-service/src:/app/src
       - ./services/gateway-service/test:/app/test
     command: pnpm run start:dev
-    environment:
-      NODE_ENV: development
+    env_file:
+      - ./services/gateway-service/.env
 
   email-service:
     build:
@@ -17,8 +17,8 @@ services:
     volumes:
       - ./services/email-service/src:/app/src
     command: pnpm run dev
-    environment:
-      NODE_ENV: development
+    env_file:
+      - ./services/email-service/.env
 
   template-service:
     build:
@@ -27,13 +27,12 @@ services:
     volumes:
       - ./services/template-service/src:/app/src
     command: pnpm run dev
-    environment:
-      NODE_ENV: development
+    env_file:
+      - ./services/template-service/.env
 
   user-service:
-    environment:
-      APP_ENV: local
-      APP_DEBUG: "true"
+    env_file:
+      - ./services/user-service/.env
     volumes:
       - ./services/user-service:/var/www/html
       - ./services/user-service/storage:/var/www/html/storage

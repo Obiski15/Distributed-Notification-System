@@ -4,11 +4,12 @@ import { RabbitMQProvider } from "../queues/rabbitmq.provider"
 import { UsersModule } from "../users/users.module"
 import { NotificationsController } from "./notifications.controller"
 import { NotificationsService } from "./notifications.service"
+import { UsersService } from "../users/users.service"
 
 @Module({
   imports: [HttpModule, UsersModule],
   controllers: [NotificationsController],
-  providers: [NotificationsService, RabbitMQProvider],
+  providers: [NotificationsService, RabbitMQProvider, UsersService],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}
