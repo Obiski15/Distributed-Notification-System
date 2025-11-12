@@ -1,9 +1,9 @@
 import { HttpService } from "@nestjs/axios"
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common"
 import Redis from "ioredis"
-import { lastValueFrom } from "rxjs"
 import { UpdateNotificationStatusDto } from "./dto/notification-status.dto"
 import { CreateNotificationDto, NotificationType } from "./dto/notification.dto"
+import { UsersService } from "../users/users.service"
 
 @Injectable()
 export class NotificationsService {
@@ -27,7 +27,7 @@ export class NotificationsService {
     this.redis = new Redis({
       host: process.env.REDIS_HOST || "127.0.0.1",
       port: Number(process.env.REDIS_PORT) || 6379,
-      password: process.env.REDIS_PASSWORD || undefined,
+
       retryStrategy: times => Math.min(times * 50, 2000), // retry with backoff
     })
 
@@ -42,45 +42,45 @@ export class NotificationsService {
   }
 
   // Safe Redis helpers
-  private async safeSet(key: string, value: any, expireSec?: number) {
-    try {
-      if (this.redis.status !== "ready") {
-        this.logger.warn("[ioredis] Redis not ready, skipping set", key)
-        return
-      }
-      if (expireSec) {
-        await this.redis.set(key, JSON.stringify(value), "EX", expireSec)
-      } else {
-        await this.redis.set(key, JSON.stringify(value))
-      }
-    } catch (err) {
-      this.logger.error("[ioredis] Failed to set key", key, err.message)
-    }
-  }
+  // private async safeSet(key: string, value: any, expireSec?: number) {
+  //   try {
+  //     if (this.redis.status !== "ready") {
+  //       this.logger.warn("[ioredis] Redis not ready, skipping set", key)
+  //       return
+  //     }
+  //     if (expireSec) {
+  //       await this.redis.set(key, JSON.stringify(value), "EX", expireSec)
+  //     } else {
+  //       await this.redis.set(key, JSON.stringify(value))
+  //     }
+  //   } catch (err) {
+  //     this.logger.error("[ioredis] Failed to set key", key, err.message)
+  //   }
+  // }
 
-  private async safeGet(key: string) {
-    try {
-      if (this.redis.status !== "ready") {
-        this.logger.warn("[ioredis] Redis not ready, skipping get", key)
-        return null
-      }
-      const value = await this.redis.get(key)
-      return value ? JSON.parse(value) : null
-    } catch (err) {
-      this.logger.error("[ioredis] Failed to get key", key, err.message)
-      return null
-    }
-  }
+  // private async safeGet(key: string) {
+  //   try {
+  //     if (this.redis.status !== "ready") {
+  //       this.logger.warn("[ioredis] Redis not ready, skipping get", key)
+  //       return null
+  //     }
+  //     const value = await this.redis.get(key)
+  //     return value ? JSON.parse(value) : null
+  //   } catch (err) {
+  //     this.logger.error("[ioredis] Failed to get key", key, err.message)
+  //     return null
+  //   }
+  // }
 
-  private async safeLpush(key: string, value: any) {
-    try {
-      if (this.redis.status !== "ready") return
-      await this.redis.lpush(key, JSON.stringify(value))
-      await this.redis.ltrim(key, 0, 100)
-    } catch (err) {
-      this.logger.error("[ioredis] Failed to push list", key, err.message)
-    }
-  }
+  // private async safeLpush(key: string, value: any) {
+  //   try {
+  //     if (this.redis.status !== "ready") return
+  //     await this.redis.lpush(key, JSON.stringify(value))
+  //     await this.redis.ltrim(key, 0, 100)
+  //   } catch (err) {
+  //     this.logger.error("[ioredis] Failed to push list", key, err.message)
+  //   }
+  // }
 
   // Handle create notification
   async handleNotification(payload: CreateNotificationDto) {
@@ -204,6 +204,8 @@ export class NotificationsService {
     body: UpdateNotificationStatusDto,
   ) {
     const { notification_id, status, timestamp, error } = body
+
+    const key = `notification:${notification_id}`
 
     if (!notification_id)
       throw new BadRequestException("notification_id required")
