@@ -39,7 +39,7 @@ export const PushNotificationSchema = {
       description: "Time to live in seconds",
     },
   },
-};
+}
 
 export const TokenValidationSchema = {
   type: "object",
@@ -50,7 +50,7 @@ export const TokenValidationSchema = {
       description: "FCM device token to validate",
     },
   },
-};
+}
 
 export const PushNotificationResponseSchema = {
   type: "object",
@@ -68,7 +68,7 @@ export const PushNotificationResponseSchema = {
       description: "Error message if failed",
     },
   },
-};
+}
 
 export const TokenValidationResponseSchema = {
   type: "object",
@@ -78,7 +78,7 @@ export const TokenValidationResponseSchema = {
       description: "Whether the token is valid",
     },
   },
-};
+}
 
 export const ErrorResponseSchema = {
   type: "object",
@@ -92,7 +92,7 @@ export const ErrorResponseSchema = {
       description: "HTTP status code",
     },
   },
-};
+}
 
 export const HealthResponseSchema = {
   type: "object",
@@ -111,4 +111,4 @@ export const HealthResponseSchema = {
       description: "Service uptime in seconds",
     },
   },
-};
+}

@@ -1,15 +1,15 @@
-import { FastifyInstance } from "fastify";
+import { FastifyInstance } from "fastify"
 import {
   send_push_notification,
   validate_device_token,
-} from "../utils/send_push.js";
+} from "../utils/send_push.js"
 import {
   PushNotificationSchema,
   TokenValidationSchema,
   PushNotificationResponseSchema,
   TokenValidationResponseSchema,
   ErrorResponseSchema,
-} from "../schema/push.schema.js";
+} from "../schema/push.schema.js"
 
 export async function pushRoutes(fastify: FastifyInstance) {
   // Send Push Notification
@@ -29,17 +29,17 @@ export async function pushRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const result = await send_push_notification(request.body as any);
-        return reply.code(200).send(result);
+        const result = await send_push_notification(request.body as any)
+        return reply.code(200).send(result)
       } catch (error) {
-        fastify.log.error(error);
+        fastify.log.error(error)
         return reply.code(500).send({
           error: "Internal server error",
           statusCode: 500,
-        });
+        })
       }
-    }
-  );
+    },
+  )
 
   // Validate Device Token
   fastify.post(
@@ -58,18 +58,18 @@ export async function pushRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { token } = request.body as { token: string };
-        const isValid = await validate_device_token(token);
-        return reply.code(200).send({ valid: isValid });
+        const { token } = request.body as { token: string }
+        const isValid = await validate_device_token(token)
+        return reply.code(200).send({ valid: isValid })
       } catch (error) {
-        fastify.log.error(error);
+        fastify.log.error(error)
         return reply.code(500).send({
           error: "Internal server error",
           statusCode: 500,
-        });
+        })
       }
-    }
-  );
+    },
+  )
 
   // Send Bulk Push Notifications
   fastify.post(
@@ -131,15 +131,15 @@ export async function pushRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { notifications } = request.body as { notifications: any[] };
+        const { notifications } = request.body as { notifications: any[] }
         const results = await Promise.all(
-          notifications.map((notification) =>
-            send_push_notification(notification)
-          )
-        );
+          notifications.map(notification =>
+            send_push_notification(notification),
+          ),
+        )
 
-        const successful = results.filter((r) => r.success).length;
-        const failed = results.length - successful;
+        const successful = results.filter(r => r.success).length
+        const failed = results.length - successful
 
         return reply.code(200).send({
           success: failed === 0,
@@ -149,16 +149,16 @@ export async function pushRoutes(fastify: FastifyInstance) {
             successful,
             failed,
           },
-        });
+        })
       } catch (error) {
-        fastify.log.error(error);
+        fastify.log.error(error)
         return reply.code(500).send({
           error: "Internal server error",
           statusCode: 500,
-        });
+        })
       }
-    }
-  );
+    },
+  )
 
   // Get Service Info
   fastify.get(
@@ -225,7 +225,7 @@ export async function pushRoutes(fastify: FastifyInstance) {
           supportedPlatforms: ["android", "ios", "web"],
           features: ["rich_notifications", "custom_data", "priority", "ttl"],
         },
-      });
-    }
-  );
+      })
+    },
+  )
 }
