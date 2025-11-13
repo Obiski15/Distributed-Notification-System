@@ -28,7 +28,7 @@ await app.register(swagger as any, {
         email: "support@example.com",
       },
     },
-    host: "localhost:3000",
+    host: "localhost:3003",
     schemes: ["http", "https"],
     consumes: ["application/json"],
     produces: ["application/json"],

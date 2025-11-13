@@ -7,51 +7,83 @@ use Illuminate\Support\Facades\Log;
 
 class ConsulService
 {
-    /**
-     * Registers the service with Consul on startup.
-     */
-    public static function register()
+    protected static $serviceName;
+    protected static $serviceId;
+    protected static $serviceAddress;
+    protected static $servicePort;
+
+
+    protected static function init(): void
     {
-        $consulHost = config('services.consul.host', env('CONSUL_HOST'));
-        $serviceId = env('SERVICE_ID', 'user-service-1');
-        $serviceName = env('SERVICE_NAME', 'user-service');
-        $serviceAddress = env('SERVICE_ADDRESS', '127.0.0.1');
-        $servicePort = env('SERVICE_PORT', 8000);
+        self::$serviceName = env('SERVICE_NAME');
+        self::$servicePort = env('SERVICE_PORT');
+        self::$serviceId = self::$serviceName . '-' . self::$servicePort;
+        self::$serviceAddress = '0.0.0.0'; 
+    }
+
+    
+    public static function register(): void
+    {
+        self::init();
+
+        $consulHost = env('CONSUL_HOST');
+        $consulPort = env('CONSUL_PORT');
+
+        $payload = [
+            'ID' => self::$serviceId,
+            'Name' => self::$serviceName,
+            'Address' => self::$serviceAddress,
+            'Port' => (int) self::$servicePort,
+            'Check' => [
+                'HTTP' => "http://" . self::$serviceAddress . ":" . self::$servicePort . "/health",
+                'Interval' => '10s',
+                'Timeout' => '5s',
+            ],
+        ];
 
         try {
-            $payload = [
-                'ID' => $serviceId,
-                'Name' => $serviceName,
-                'Address' => $serviceAddress,
-                'Port' => (int) $servicePort,
-                'Check' => [
-                    'HTTP' => "http://{$serviceAddress}:{$servicePort}/health",
-                    'Interval' => '10s',
-                    'Timeout' => '5s',
-                ],
-            ];
-
-            Http::put("{$consulHost}/v1/agent/service/register", $payload);
-
-            Log::info("✅ Registered {$serviceName} with Consul successfully");
+            Http::put("{$consulHost}:{$consulPort}/v1/agent/service/register", $payload);
+            Log::info("✅ Registered ".self::$serviceName." with Consul successfully");
         } catch (\Exception $e) {
             Log::error("❌ Failed to register service with Consul: " . $e->getMessage());
         }
     }
 
-    /**
-     * Deregister the service on shutdown (optional for Docker setups).
-     */
-    public static function deregister()
+    public static function deregister(): void
     {
-        $consulHost = config('services.consul.host', env('CONSUL_HOST'));
-        $serviceId = env('SERVICE_ID', 'user-service-1');
+        self::init();
+
+        $consulHost = env('CONSUL_HOST');
+        $consulPort = env('CONSUL_PORT');
 
         try {
-            Http::put("{$consulHost}/v1/agent/service/deregister/{$serviceId}");
-            Log::info("🧹 Deregistered {$serviceId} from Consul");
+            Http::put("{$consulHost}:{$consulPort}/v1/agent/service/deregister/" . self::$serviceId);
+            Log::info("🧹 Deregistered ".self::$serviceId." from Consul");
         } catch (\Exception $e) {
             Log::error("⚠️ Failed to deregister service: " . $e->getMessage());
         }
+    }
+
+    public static function handleShutdown(): void
+    {
+        if (function_exists('pcntl_async_signals')) {
+            pcntl_async_signals(true);
+
+            pcntl_signal(SIGINT, function () {
+                Log::info("🛑 SIGINT received, shutting down...");
+                self::deregister();
+                exit(0);
+            });
+
+            pcntl_signal(SIGTERM, function () {
+                Log::info("🛑 SIGTERM received, shutting down...");
+                self::deregister();
+                exit(0);
+            });
+        }
+
+        register_shutdown_function(function () {
+            self::deregister();
+        });
     }
 }

@@ -1,7 +1,7 @@
+import amqp from "amqplib"
 import app from "./app.js"
 import { consume_queue } from "./queue/rabbitmq.js"
 import { send_push_notification } from "./utils/send_push.js"
-import amqp from "amqplib"
 
 async function connectRabbit() {
   const connection = await amqp.connect(app.config.RABBITMQ_CONNECTION_URL)
@@ -16,19 +16,13 @@ connectRabbit().catch(err => {
 
 // register consul for dynamic service discovery
 async function registerService() {
-  const isLocal = app.config.CONSUL_HOST === "localhost"
-
-  const serviceAddress = isLocal
-    ? "host.docker.internal"
-    : app.config.SERVICE_NAME
-
   const body = {
     Name: app.config.SERVICE_NAME,
     ID: `${app.config.SERVICE_NAME}-${app.config.PORT}`,
-    Address: serviceAddress,
+    Address: app.config.CONSUL_HOST,
     Port: app.config.PORT,
     Check: {
-      HTTP: `http://${serviceAddress}:${app.config.PORT}/health`,
+      HTTP: `http://${app.config.CONSUL_HOST}:${app.config.PORT}/health`,
       Interval: "10s",
     },
   }
@@ -43,7 +37,7 @@ async function registerService() {
   )
 
   console.log(
-    `[${app.config.SERVICE_NAME}] Registered with Consul at ${serviceAddress}:${app.config.PORT}`,
+    `[${app.config.SERVICE_NAME}] Registered with Consul at ${app.config.CONSUL_HOST}:${app.config.PORT}`,
   )
 }
 
@@ -77,7 +71,7 @@ process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
 
 const start = async () => {
   try {
-    await app.listen({ port: app.config.PORT })
+    await app.listen({ port: app.config.PORT, host: "0.0.0.0" })
     await consume_queue("push", async payload => {
       const result = await send_push_notification(payload)
       if (!result.success) {

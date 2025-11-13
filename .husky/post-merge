@@ -1,5 +1,4 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
 # Install Node.js dependencies for all workspaces
 if [ -f "pnpm-workspace.yaml" ] || [ -f "package.json" ]; then

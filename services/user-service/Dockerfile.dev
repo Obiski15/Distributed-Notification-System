@@ -1,6 +1,5 @@
-# ======================================
-# Development Dockerfile for user-service (Laravel)
-# ======================================
+# Development Dockerfile
+
 FROM php:8.2-fpm-alpine
 
 # Install system dependencies
@@ -19,23 +18,37 @@ RUN apk add --no-cache \
     oniguruma-dev \
     libxml2-dev
 
+# Install PHP extensions required by Laravel
+RUN docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    intl \
+    opcache
+
 # Install Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy composer files from the correct service directory
-COPY services/user-service/composer.json ./
-COPY services/user-service/composer.lock* ./
+# Copy Composer files (specific to user-service)
+COPY services/user-service/composer.json ./ 
+COPY services/user-service/composer.lock* ./ 
 
-# Install dependencies
-RUN composer install --prefer-dist --no-interaction --no-progress
+# Install dependencies without scripts or interaction
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress
 
-# Copy full source code for this service
-COPY services/user-service ./
+# Copy the rest of the service source code
+COPY services/user-service ./ 
 
-# Expose port for Laravel Octane
+# Ensure correct permissions for Laravel storage and cache
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+# Expose Laravel Octane default port
 EXPOSE 8000
 
-# Start Octane in watch mode
-CMD ["php", "artisan", "octane:start", "--watch", "--host=0.0.0.0", "--port=8000"]
+# Start Laravel Octane with host 0.0.0.0 (so it works in Docker)
+CMD ["php", "artisan", "octane:start", "--server=swoole", "--host=0.0.0.0", "--port=8000", "--watch"]
