@@ -53,7 +53,7 @@ logs:
 	docker-compose logs -f
 
 logs-gateway:
-	docker-compose logs -f gateway
+	docker-compose logs -f gateway-service
 
 logs-email:
 	docker-compose logs -f email-service
@@ -84,7 +84,7 @@ ps:
 # Single service shells
 # ----------------------------
 shell-gateway:
-	docker-compose exec gateway sh
+	docker-compose exec gateway-service sh
 
 shell-email:
 	docker-compose exec email-service sh
@@ -112,6 +112,21 @@ dev:
 dev-build:
 	docker-compose $(DEV_COMPOSE) up -d --build
 
+dev-build-gateway:
+	docker-compose $(DEV_COMPOSE) build gateway-service
+
+dev-build-email:
+	docker-compose $(DEV_COMPOSE) build email-service
+
+dev-build-template:
+	docker-compose $(DEV_COMPOSE) build template-service
+
+dev-build-user:
+	docker-compose $(DEV_COMPOSE) build user-service
+
+dev-build-push:
+	docker-compose $(DEV_COMPOSE) build push-service
+
 dev-down:
 	docker-compose $(DEV_COMPOSE) down
 
@@ -119,7 +134,7 @@ dev-logs:
 	docker-compose $(DEV_COMPOSE) logs -f
 
 dev-logs-gateway:
-	docker-compose $(DEV_COMPOSE) logs -f gateway
+	docker-compose $(DEV_COMPOSE) logs -f gateway-service
 
 dev-logs-email:
 	docker-compose $(DEV_COMPOSE) logs -f email-service
@@ -153,8 +168,8 @@ dev-push:
 # Rebuild specific service
 # ----------------------------
 rebuild-gateway:
-	docker-compose build --no-cache gateway
-	docker-compose up -d gateway
+	docker-compose build --no-cache gateway-service
+	docker-compose up -d gateway-service
 
 rebuild-email:
 	docker-compose build --no-cache email-service
@@ -177,7 +192,7 @@ rebuild-push:
 # ----------------------------
 health:
 	@echo "Checking service health..."
-	@curl -f http://localhost:3000/health || echo "Gateway: DOWN"
+	@curl -f http://localhost:3000/health || echo "Gateway Service: DOWN"
 	@curl -f http://localhost:3001/health || echo "Email Service: DOWN"
 	@curl -f http://localhost:3002/health || echo "Template Service: DOWN"
 	@curl -f http://localhost:8000/health || echo "User Service: DOWN"

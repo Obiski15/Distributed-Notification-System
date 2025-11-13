@@ -1,25 +1,34 @@
-# Development Dockerfile for gateway-service
+# Development Dockerfile for gateway-service (FINAL, CORRECTED VERSION)
 FROM node:20-alpine
 
-# Install pnpm
-RUN npm install -g pnpm@10.20.0
+# Install pnpm globally
+RUN npm install -g pnpm
 
+# Set the working directory to the root of the monorepo
 WORKDIR /app
 
-# Copy root workspace files
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+# --- Dependency Installation Stage ---
 
-# Copy gateway service package.json
+# 1. Copy all the files that define your workspace structure and dependencies.
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 COPY services/gateway-service/package.json ./services/gateway-service/
 
-# Install only this service's dependencies (dev + prod)
-RUN pnpm install --filter ./services/gateway-service...
+# 2. THE CRITICAL FIX: Explicitly set the environment to 'development'.
+#    This forces pnpm to install devDependencies (like @nestjs/cli).
+ENV NODE_ENV=development
 
-# Copy source code
-COPY services/gateway-service ./services/gateway-service
+# 3. Run the robust install command. It will now correctly install EVERYTHING.
+RUN pnpm install --ignore-scripts
 
-# Expose port for development
+# --- Application Code Stage ---
+
+# 4. Now that dependencies are properly installed, copy your service's source code.
+COPY services/gateway-service ./services/gateway-service/
+
+# Expose development port
 EXPOSE 3000
 
-# Start the app in NestJS watch mode
-CMD ["pnpm", "start:dev", "--filter", "./services/gateway-service"]
+# 5. This command will now find the 'nest' executable.
+CMD ["pnpm", "--filter", "api-gateway-service", "start:dev"]

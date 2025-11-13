@@ -3,39 +3,50 @@
 # ======================================
 FROM php:8.2-fpm-alpine
 
-# Install system dependencies
+# Set build-time arguments for build-essential packages
+ARG BUILD_DEPS="autoconf g++ make musl-dev libc-dev linux-headers"
+
+# Install system dependencies and PHP extensions in one layer
 RUN apk add --no-cache \
-    bash \
-    git \
-    curl \
-    zip \
-    unzip \
-    libpng \
-    libjpeg-turbo \
-    libwebp \
-    freetype \
+    ${BUILD_DEPS} \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
     icu-dev \
-    zlib-dev \
+    libxml2-dev \
     oniguruma-dev \
-    libxml2-dev
+    zlib-dev \
+    bash \
+    curl \
+    git \
+    unzip \
+    zip \
+    && docker-php-ext-install \
+        bcmath \
+        intl \
+        mbstring \
+        pdo_mysql \
+        sockets \
+        xml \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install gd \
+    && apk del ${BUILD_DEPS}
 
 # Install Composer
 COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copy composer files from the correct service directory
-COPY services/user-service/composer.json ./
-COPY services/user-service/composer.lock* ./
-
-# Install dependencies
-RUN composer install --prefer-dist --no-interaction --no-progress
-
-# Copy full source code for this service
+# --- FIX IS HERE ---
+# First, copy all your application files
 COPY services/user-service ./
 
-# Expose port for Laravel Octane
+# Now, run composer install. It can find the 'artisan' file.
+RUN composer install --prefer-dist --no-interaction --no-progress
+# --- END FIX ---
+
 EXPOSE 8000
 
-# Start Octane in watch mode
+# Start the application
 CMD ["php", "artisan", "octane:start", "--watch", "--host=0.0.0.0", "--port=8000"]

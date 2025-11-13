@@ -134,7 +134,7 @@ importers:
         specifier: ^9.18.0
         version: 9.39.1
       '@nestjs/cli':
-        specifier: ^11.0.0
+        specifier: ^11.0.10
         version: 11.0.10(@swc/cli@0.6.0(@swc/core@1.15.1)(chokidar@4.0.3))(@swc/core@1.15.1)(@types/node@22.19.0)
       '@nestjs/schematics':
         specifier: ^11.0.0

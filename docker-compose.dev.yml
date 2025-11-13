@@ -4,10 +4,9 @@ services:
       context: ./
       dockerfile: ./services/gateway-service/Dockerfile.dev
     volumes:
-      - ./services/gateway-service/src:/app/src
-      - ./services/gateway-service/test:/app/test
-    command: pnpm run start:dev
-
+      - ./services/gateway-service:/app/services/gateway-service
+      - /app/services/gateway-service/node_modules
+      
   push-service:
     build:
       context: ./

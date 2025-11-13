@@ -79,6 +79,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      consul:
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
