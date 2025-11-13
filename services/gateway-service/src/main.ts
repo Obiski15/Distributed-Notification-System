@@ -6,7 +6,7 @@ import {
 } from "@nestjs/platform-fastify"
 import * as dotenv from "dotenv"
 import { AppModule } from "./app.module"
-import { SwaggerGateway } from "./swagger.gateway"
+import { SwaggerGateway } from "./swagger/swaggerService"
 import { ConsulService } from "./consul/consul.service"
 
 dotenv.config()
