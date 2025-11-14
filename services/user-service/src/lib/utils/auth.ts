@@ -76,4 +76,9 @@ export class AuthUtils {
   }
 }
 
+// Export the authUser middleware function for easy use in routes
+export const authUser = (authUtils: AuthUtils) => {
+  return authUtils.authUser.bind(authUtils)
+}
+
 export default AuthUtils
