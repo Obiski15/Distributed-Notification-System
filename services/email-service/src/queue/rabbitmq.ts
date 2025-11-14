@@ -4,6 +4,7 @@ import type { SendMailOptions } from "nodemailer"
 
 import app from "../app.js"
 import fetch_template from "../lib/helpers/fetch_template.js"
+import update_notification_status from "../lib/helpers/update_notification_status.js"
 import circuit_breaker from "../lib/utils/circuit_breaker.js"
 
 let connection: amqplib.ChannelModel | null = null
@@ -63,42 +64,66 @@ export const consume_queue = async (
   await ch.bindQueue(`${routingKey}.failed`, "notifications.direct", "failed")
   await ch.bindQueue(`${routingKey}.queue`, "notifications.direct", routingKey)
 
-  ch.consume(`${routingKey}.queue`, async (msg: any) => {
-    if (msg) {
-      console.log(`\n📨 Received message on ${routingKey}.queue`)
-      try {
-        const data = JSON.parse(msg.content.toString()) as {
+  let messagePriority: number = 0
+
+  ch.consume(
+    `${routingKey}.queue`,
+    async (msg: any) => {
+      if (msg) {
+        let data: null | {
           template_code: string
           email: string
+          notification_id: string
           variables: Record<string, string>
           priority: number
+        } = null
+
+        console.log(`\n📨 Received message on ${routingKey}.queue`)
+
+        try {
+          data = JSON.parse(msg.content.toString())
+
+          if (data) {
+            messagePriority = data.priority ?? 0
+            // fetch template
+            const template = await circuit_breaker(
+              async () => await fetch_template(data!.template_code),
+              "Template",
+            ).fire()
+
+            console.log(data)
+            const html = mustache.render(template.body, data.variables)
+
+            await callback({
+              to: data.email,
+              subject: template.subject,
+              from: "<hng.notification@gmail.com>",
+              html,
+            })
+
+            // mark notification as delivered
+            update_notification_status({
+              status: "delivered",
+              notification_id: data?.notification_id!,
+            })
+            ch.ack(msg)
+          }
+        } catch (error) {
+          //  mark notification as failed
+          update_notification_status({
+            status: "failed",
+            notification_id: data?.notification_id!,
+            error: (error as Error).message,
+          })
+          ch.nack(msg, false, false)
+          console.log(
+            `💀 Message sent to Dead Letter Queue: ${routingKey}.failed\n`,
+          )
         }
-
-        // fetch template
-        const template = await circuit_breaker(
-          async () => await fetch_template(data.template_code),
-          "Template",
-        ).fire()
-
-        console.log(data)
-        const html = mustache.render(template.body, data.variables)
-
-        await callback({
-          to: data.email,
-          subject: template.subject,
-          from: "<hng.notification@gmail.com>",
-          html,
-        })
-
-        // todo: call gateway status update endpoint to mark notification as sent
-        ch.ack(msg)
-      } catch (error) {
-        // call gateway status update endpoint to mark notification as failed
-        ch.nack(msg, false, false)
-        console.log(
-          `💀 Message sent to Dead Letter Queue: ${routingKey}.failed\n`,
-        )
       }
-    }
-  })
+    },
+    {
+      priority: messagePriority,
+    },
+  )
 }

@@ -2,9 +2,9 @@ import { HttpService } from "@nestjs/axios"
 import { BadRequestException, Inject, Injectable, Logger } from "@nestjs/common"
 import Redis from "ioredis"
 import { lastValueFrom } from "rxjs"
+import { UsersService } from "../users/users.service"
 import { UpdateNotificationStatusDto } from "./dto/notification-status.dto"
 import { CreateNotificationDto, NotificationType } from "./dto/notification.dto"
-import { UsersService } from "../users/users.service"
 
 export interface NotificationResponse {
   success: boolean
@@ -142,6 +142,7 @@ export class NotificationsService {
           JSON.stringify({
             notification_type,
             user_id,
+            notification_id: key,
             template_code,
             variables,
             request_id,

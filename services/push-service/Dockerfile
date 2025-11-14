@@ -1,52 +1,32 @@
-# =========================
-# Build stage
-# =========================
 FROM node:20-alpine AS builder
 
-# Install pnpm
 RUN npm install -g pnpm@10.20.0
 
 WORKDIR /app
 
-# Copy root workspace files (relative to repo root)
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
-
-# Copy push service package.json
 COPY services/push-service/package.json ./services/push-service/
-
-# Install dependencies including dev for build
-RUN pnpm install --frozen-lockfile --filter ./services/push-service...
-
-# Copy push service source code
 COPY services/push-service ./services/push-service
 
-# Build the project
-RUN pnpm build --filter ./services/push-service...
+RUN pnpm install --frozen-lockfile --filter push-service...
+RUN pnpm --filter push-service run build
 
-# =========================
-# Production stage
-# =========================
+
 FROM node:20-alpine
 
-# Install pnpm
 RUN npm install -g pnpm@10.20.0
 
 WORKDIR /app
 
-# Copy root workspace files
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
-
-# Copy push service package.json
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 COPY services/push-service/package.json ./services/push-service/
 
-# Install only production dependencies
-RUN pnpm install --prod --frozen-lockfile --filter ./services/push-service...
+RUN pnpm install --prod --frozen-lockfile --filter push-service --ignore-scripts
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/services/push-service/dist ./services/push-service/dist
 
-# Expose port
 EXPOSE 3003
 
-# Start the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "services/push-service/dist/server.js"]

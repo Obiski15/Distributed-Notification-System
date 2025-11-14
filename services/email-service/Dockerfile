@@ -1,52 +1,32 @@
-# =========================
-# Build stage
-# =========================
 FROM node:20-alpine AS builder
 
-# Install pnpm
 RUN npm install -g pnpm@10.20.0
 
 WORKDIR /app
 
-# Copy root workspace files (relative to repo root)
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
-
-# Copy email service package.json
 COPY services/email-service/package.json ./services/email-service/
-
-
-# Copy email service source code
 COPY services/email-service ./services/email-service
 
-# Install dependencies including dev for build
-RUN pnpm install --frozen-lockfile --filter ./services/email-service...
-
-# Build the project
+RUN pnpm install --frozen-lockfile --filter email-service...
 RUN pnpm --filter email-service run build
 
 
-# =========================
-# Production stage
-# =========================
 FROM node:20-alpine
 
-# Install pnpm
 RUN npm install -g pnpm@10.20.0
 
-WORKDIR /app/services/email-service
+WORKDIR /app
 
-# Copy workspace files
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json /app/
-COPY services/email-service/package.json ./
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+COPY services/email-service/package.json ./services/email-service/
 
-# Install only production dependencies
-RUN pnpm install --prod --frozen-lockfile --dir . --filter email-service --ignore-scripts
+RUN pnpm install --prod --frozen-lockfile --filter email-service --ignore-scripts
 
-# Copy built files from builder
-COPY --from=builder /app/services/email-service/dist ./dist
+COPY --from=builder /app/services/email-service/dist ./services/email-service/dist
 
-# Expose port
 EXPOSE 3001
 
-# Start the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "services/email-service/dist/server.js"]
