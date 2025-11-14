@@ -19,17 +19,28 @@ export class UsersController {
     private readonly consulService: ConsulService,
   ) {}
 
+  // --- NEW LOGIN ENDPOINT ---
+  @Post("/login")
+  @HttpCode(HttpStatus.OK)
+  async loginUser(@Body() body: any) {
+    // This forwards the user's credentials (e.g., email and password)
+    // to the downstream Laravel service. That service is responsible for
+    // validating the credentials and returning a JWT token.
+
+    // IMPORTANT: You MUST confirm the exact login path with the Laravel developer.
+    // It might be "/api/v1/login", "/api/v1/auth/token", or something else.
+    const loginPath = "/api/v1/auth/login"
+
+    return await this.usersService.forwardToUserService("POST", loginPath, body)
+  }
+  // --- END OF NEW ENDPOINT ---
+
   @Post("/")
   @HttpCode(HttpStatus.CREATED)
   async createUser(@Body() body: any) {
-    const userServiceUrl =
-      await this.consulService.getServiceAddress("user-service")
-    if (!userServiceUrl)
-      throw new BadRequestException("User service unavailable")
-
     const res = await this.usersService.forwardToUserService(
       "POST",
-      "/api/v1/users",
+      "/api/v1/auth/register",
       body,
     )
 
@@ -42,14 +53,9 @@ export class UsersController {
 
   @Patch("/:id")
   async updateUser(@Param("id") id: string, @Body() body: any) {
-    const userServiceUrl =
-      await this.consulService.getServiceAddress("user-service")
-    if (!userServiceUrl)
-      throw new BadRequestException("User service unavailable")
-
     const res = await this.usersService.forwardToUserService(
       "PATCH",
-      `/api/v1/users/${id}`,
+      `/api/v1/user/${id}`,
       body,
     )
 
@@ -63,11 +69,6 @@ export class UsersController {
   @Delete("/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param("id") id: string) {
-    const userServiceUrl =
-      await this.consulService.getServiceAddress("user-service")
-    if (!userServiceUrl)
-      throw new BadRequestException("User service unavailable")
-
     await this.usersService.forwardToUserService(
       "DELETE",
       `/api/v1/users/${id}`,

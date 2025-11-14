@@ -24,6 +24,7 @@ export class NotificationsService {
     @Inject("RABBITMQ_CONNECTION") private mqProvider: any,
     private readonly http: HttpService,
     private readonly usersService: UsersService, // circuit breaker + Consul handled internally
+    private readonly consulService: ConsulService,
   ) {
     this.channel = mqProvider?.channel
     this.exchange =
@@ -67,7 +68,7 @@ export class NotificationsService {
     try {
       userRes = await this.usersService.forwardToUserService(
         "GET",
-        `/api/v1/users/${user_id}`,
+        `/api/v1/user/${user_id}`,
       )
     } catch (err) {
       this.logger.error(
@@ -82,14 +83,32 @@ export class NotificationsService {
       }
     }
 
-    const user = userRes?.data?.data
-    if (!user)
+    // --- FIX: START ---
+    // FIX 1 & 3: Improved error handling and correct data access.
+    // First, check if the request to the user service failed (e.g., circuit breaker open, service down).
+    if (userRes?.success === false) {
+      this.logger.error(
+        `Failed to retrieve user due to service error: ${userRes.message}`,
+      )
       return {
         success: false,
-        message: "User not found",
+        message: userRes.message, // Return the specific error like "User Service unavailable"
         data: null,
         meta: null,
       }
+    }
+
+    // Second, access the user data from the `data` property of the Laravel response.
+    const user = userRes?.data
+    if (!user) {
+      return {
+        success: false,
+        message: "User not found", // This now correctly means the user doesn't exist.
+        data: null,
+        meta: null,
+      }
+    }
+    // --- FIX: END ---
 
     const prefKey =
       notification_type === NotificationType.EMAIL ? "email" : "push"
@@ -231,8 +250,7 @@ export class NotificationsService {
     data?: any,
   ): Promise<any> {
     try {
-      const baseUrl =
-        await this.usersService["consulService"].getServiceAddress(serviceName)
+      const baseUrl = await this.consulService.getServiceAddress(serviceName)
       if (!baseUrl) throw new Error(`${serviceName} not found in Consul`)
 
       const url = `${baseUrl}${path}`
