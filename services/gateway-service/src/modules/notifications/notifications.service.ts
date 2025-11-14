@@ -165,6 +165,7 @@ export class NotificationsService {
         Buffer.from(
           JSON.stringify({
             notification_type,
+            email: user.email,
             user_id,
             notification_id: key,
             template_code,
