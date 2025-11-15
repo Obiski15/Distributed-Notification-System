@@ -72,7 +72,7 @@ process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
 const start = async () => {
   try {
     await app.listen({ port: app.config.PORT, host: "0.0.0.0" })
-    await consume_queue("push", async payload => {
+    await consume_queue(async payload => {
       const result = await send_push_notification(payload)
       if (!result.success) {
         throw new Error(result.error || "Failed to send push notification")

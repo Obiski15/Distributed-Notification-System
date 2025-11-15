@@ -171,6 +171,7 @@ export class NotificationsService {
             notification_id: key,
             template_code,
             variables,
+            push_tokens: user.push_tokens,
             request_id,
             priority,
             metadata,
