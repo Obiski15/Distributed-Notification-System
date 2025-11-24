@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import Redis from "ioredis"
+import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
 @Injectable()
 export class RedisProvider implements OnModuleInit, OnModuleDestroy {
@@ -30,9 +31,8 @@ export class RedisProvider implements OnModuleInit, OnModuleDestroy {
 
       await this.redis.connect() // force connection on startup
       this.logger.log("✅ Redis connection established")
-    } catch (error) {
-      this.logger.error("❌ Fatal: Could not connect to Redis")
-      throw error
+    } catch {
+      throw new CustomException("❌ Fatal: Could not connect to Redis", 500)
     }
   }
 

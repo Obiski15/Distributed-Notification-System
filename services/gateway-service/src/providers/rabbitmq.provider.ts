@@ -7,6 +7,7 @@ import {
 import { ConfigService } from "@nestjs/config"
 
 import * as amqp from "amqplib"
+import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
 interface IPublish<T> {
   exchange?: string
@@ -35,8 +36,7 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
       await this.connect()
       Logger.log("✅ Connected to RabbitMQ")
     } catch {
-      Logger.log("❌ Fatal: Could not connect to RabbitMQ")
-      // throw error
+      throw new CustomException("❌ Fatal: Could not connect to RabbitMQ", 500)
     }
   }
 

@@ -15,9 +15,7 @@ const errorHandler = (
 
   reply.status(err.statusCode ?? 500).send({
     success: false,
-    message: err.isOperational
-      ? (err.message ?? "Internal Server Error")
-      : "Internal Server Error",
+    message: err.isOperational ? err.message : "Internal Server Error",
     error: err.validation ?? undefined,
   })
 }

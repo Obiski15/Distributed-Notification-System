@@ -1,6 +1,6 @@
 import { HttpService } from "@nestjs/axios"
 import { Injectable } from "@nestjs/common"
-import { AxiosError, AxiosResponse } from "axios"
+import { AxiosResponse } from "axios"
 import { FastifyRequest } from "fastify"
 import { firstValueFrom } from "rxjs"
 import { Breaker } from "./breaker"
@@ -18,32 +18,24 @@ export class Fetch {
   }
 
   async fetch(serviceName: string) {
-    try {
-      const targetUrl = `http://${
-        this.service.ServiceAddress || this.service.Address
-      }:${this.service.ServicePort}${this.request.url}`
+    const targetUrl = `http://${
+      this.service.ServiceAddress || this.service.Address
+    }:${this.service.ServicePort}${this.request.url}`
 
-      const res = await new Breaker<AxiosResponse>(
-        () =>
-          firstValueFrom(
-            this.httpService.request({
-              method: this.request.method,
-              url: targetUrl,
-              data: this.request.body,
-              headers: this.request.headers,
-              params: this.request.query,
-            }),
-          ),
-        serviceName,
-      ).fire()
+    const res = await new Breaker<AxiosResponse>(
+      () =>
+        firstValueFrom(
+          this.httpService.request({
+            method: this.request.method,
+            url: targetUrl,
+            data: this.request.body,
+            headers: this.request.headers,
+            params: this.request.query,
+          }),
+        ),
+      serviceName,
+    ).fire()
 
-      return res.data as Record<string, unknown>
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        throw error.response?.data
-      }
-
-      throw new Error("Something went wrong")
-    }
+    return res.data as Record<string, unknown>
   }
 }

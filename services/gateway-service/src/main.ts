@@ -1,4 +1,3 @@
-// import fastifyProxy from "@fastify/http-proxy"
 import { ValidationPipe } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
@@ -15,15 +14,6 @@ async function bootstrap() {
     new FastifyAdapter(),
   )
 
-  // for (const { service, prefix } of SERVICES) {
-  //   await app.register(fastifyProxy, {
-  //     upstream: service,
-  //     prefix: `/${prefix}`,
-  //     rewritePrefix: "",
-  //     http2: false,
-  //   })
-  // }
-
   app.enableCors({
     credentials: true,
     origin: (origin, cb) => {
@@ -33,7 +23,18 @@ async function bootstrap() {
     },
   })
 
-  app.setGlobalPrefix("api/v1")
+  const instance = app.getHttpAdapter().getInstance()
+
+  app.setGlobalPrefix("api/v1", {
+    exclude: ["/health"],
+  })
+
+  instance.get("/health", (_req, reply) => {
+    reply.send({
+      success: true,
+      message: "Gateway service healthy",
+    })
+  })
 
   // Global validation pipe
   app.useGlobalPipes(

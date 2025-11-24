@@ -5,6 +5,7 @@ import {
   OnModuleInit,
 } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
+import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
 @Injectable()
 export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
@@ -27,9 +28,8 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         `✅ [${this.SERVICE_NAME}] Registered with Consul at ${this.CONSUL_HOST}:${this.CONSUL_PORT}`,
       )
-    } catch (error) {
-      this.logger.error("❌ Fatal: Could not register with Consul")
-      throw error
+    } catch {
+      throw new CustomException("❌ Fatal: Could not register with Consul", 500)
     }
   }
 
@@ -45,7 +45,7 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
       Address: this.SERVICE_NAME,
       Port: Number(this.PORT),
       Check: {
-        HTTP: `http://${this.SERVICE_NAME}:${this.PORT}/api/v1/health`,
+        HTTP: `http://${this.SERVICE_NAME}:${this.PORT}/health`,
         Interval: "10s",
       },
     }
@@ -67,42 +67,5 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
       `http://${this.CONSUL_HOST}:${this.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
       { method: "PUT" },
     )
-  }
-
-  // Get the base URL for a single service
-  async getServiceAddress(serviceName: string): Promise<string | null> {
-    try {
-      const res = await fetch(
-        `http://${this.CONSUL_HOST}:${this.CONSUL_PORT}/v1/catalog/service/${serviceName}`,
-      )
-      const data = (await res.json()) as any[]
-      if (!data || data.length === 0) {
-        this.logger.warn(`Service [${serviceName}] not found in Consul`)
-        return null
-      }
-      const service = data[0]
-      return `http://${service.ServiceAddress}:${service.ServicePort}`
-    } catch (err) {
-      this.logger.error("Consul query failed:", err)
-      return null
-    }
-  }
-
-  async getAllServices(): Promise<Record<string, string>> {
-    try {
-      const res = await fetch(
-        `http://${this.CONSUL_HOST}:${this.CONSUL_PORT}/v1/catalog/services`,
-      )
-      const services = (await res.json()) as Record<string, string[]>
-      const result: Record<string, string> = {}
-      for (const name of Object.keys(services)) {
-        const address = await this.getServiceAddress(name)
-        if (address) result[name] = address
-      }
-      return result
-    } catch (err) {
-      this.logger.error("Failed to fetch all services from Consul:", err)
-      return {}
-    }
   }
 }

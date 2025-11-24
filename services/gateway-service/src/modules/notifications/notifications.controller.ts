@@ -17,10 +17,10 @@ import {
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  // Create queue notification (email | push)
+  // Queue notifications (email | push)
   @Post("/")
   @HttpCode(HttpStatus.ACCEPTED)
-  createNotification() {
+  queueNotification() {
     return "notification triggered"
     //  this.notificationsService.handleNotification(body)
   }
