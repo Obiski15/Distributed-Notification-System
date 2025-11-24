@@ -1,15 +1,15 @@
 import { HttpModule } from "@nestjs/axios"
 import { Module } from "@nestjs/common"
-import { RabbitMQProvider } from "../queues/rabbitmq.provider"
-import { UsersModule } from "../users/users.module"
+
+import { RabbitMQProvider } from "../../providers/rabbitmq.provider"
+import { RedisProvider } from "../../providers/redis.provider"
 import { NotificationsController } from "./notifications.controller"
 import { NotificationsService } from "./notifications.service"
-import { ConsulModule } from "../../consul/consul.module"
 
 @Module({
-  imports: [HttpModule, UsersModule, ConsulModule],
+  imports: [HttpModule],
   controllers: [NotificationsController],
-  providers: [NotificationsService, RabbitMQProvider],
-  exports: [NotificationsService],
+  providers: [NotificationsService, RedisProvider, RabbitMQProvider],
+  exports: [],
 })
 export class NotificationsModule {}

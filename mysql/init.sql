@@ -1,15 +1,18 @@
 -- MySQL initialization script
 -- This creates multiple databases and users when MySQL container starts
--- Create template service database
-CREATE DATABASE IF NOT EXISTS template_service;
--- Create user service database
-CREATE DATABASE IF NOT EXISTS user_service;
--- TEMPLATE SERVICE SETUP
 
-CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY 'supersecretpassword';
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
-ALTER USER 'root'@'%' IDENTIFIED BY 'supersecretpassword';
+-- TEMPLATE SERVICE
+CREATE DATABASE IF NOT EXISTS template_service;
+CREATE USER IF NOT EXISTS 'user'@'%' IDENTIFIED BY 'supersecretpassword';
+GRANT ALL PRIVILEGES ON template_service.* TO 'user'@'%';
+
+-- USER SERVICE
+CREATE DATABASE IF NOT EXISTS user_service;
+CREATE USER IF NOT EXISTS 'user'@'%' IDENTIFIED BY 'supersecretpassword';
+GRANT ALL PRIVILEGES ON user_service.* TO 'user'@'%';
+
 FLUSH PRIVILEGES;
+
 
 USE template_service;
 -- Create templates table

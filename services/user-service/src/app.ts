@@ -37,7 +37,7 @@ await app.register(swaggerUi, {
   staticCSP: true,
 })
 
-app.register(mysql, {
+await app.register(mysql, {
   promise: true,
   connectionString: app.config.DB_URL,
 })
@@ -47,7 +47,7 @@ app.register(jwt, {
 })
 
 app.register(auth_routes, { prefix: "/api/v1/auth" })
-app.register(user_route, { prefix: "/api/v1/user" })
+app.register(user_route, { prefix: "/api/v1/users" })
 
 app.get(
   "/health",
