@@ -3,9 +3,8 @@ import mustache from "mustache"
 import type { SendMailOptions } from "nodemailer"
 
 import app from "../app.js"
-import fetch_template from "../lib/helpers/fetch_template.js"
+import { fetch_template } from "../lib/helpers/fetch_template.js"
 import update_notification_status from "../lib/helpers/update_notification_status.js"
-import circuit_breaker from "../lib/utils/circuit_breaker.js"
 
 let connection: amqplib.ChannelModel | null = null
 let channel: amqplib.Channel | null = null
@@ -86,12 +85,8 @@ export const consume_queue = async (
           if (data) {
             messagePriority = data.priority ?? 0
             // fetch template
-            const template = await circuit_breaker(
-              async () => await fetch_template(data!.template_code),
-              "Template",
-            ).fire()
+            const template = await fetch_template(data!.template_code)
 
-            console.log(data, template)
             const html = mustache.render(template.body, data.variables)
 
             await callback({

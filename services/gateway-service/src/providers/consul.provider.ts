@@ -1,18 +1,41 @@
-import { Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
 
-export class ConsulService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(ConsulService.name)
-  private readonly CONSUL_HOST = process.env.CONSUL_HOST || "localhost"
-  private readonly CONSUL_PORT = process.env.CONSUL_PORT || 8500
-  private readonly SERVICE_NAME = process.env.SERVICE_NAME || "gateway-service"
-  private readonly PORT = process.env.PORT || 3000
+@Injectable()
+export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(ConsulProvider.name)
+  private readonly CONSUL_HOST: string
+  private readonly CONSUL_PORT: number
+  private readonly SERVICE_NAME: string
+  private readonly PORT: number
+
+  constructor(private readonly config: ConfigService) {
+    this.CONSUL_HOST = this.config.get<string>("CONSUL_HOST")!
+    this.SERVICE_NAME = this.config.get("SERVICE_NAME")!
+    this.CONSUL_PORT = +this.config.get("CONSUL_PORT")
+    this.PORT = +this.config.get("PORT")
+  }
 
   async onModuleInit() {
-    await this.registerService()
+    try {
+      await this.registerService()
+      this.logger.log(
+        `✅ [${this.SERVICE_NAME}] Registered with Consul at ${this.CONSUL_HOST}:${this.CONSUL_PORT}`,
+      )
+    } catch (error) {
+      this.logger.error("❌ Fatal: Could not register with Consul")
+      throw error
+    }
   }
 
   async onModuleDestroy() {
     await this.deregisterService()
+    this.logger.log(`[${this.SERVICE_NAME}] Deregistered from Consul`)
   }
 
   public async registerService() {
@@ -35,26 +58,18 @@ export class ConsulService implements OnModuleInit, OnModuleDestroy {
         body: JSON.stringify(body),
       },
     )
-
-    this.logger.log(
-      `[${this.SERVICE_NAME}] Registered with Consul at ${this.CONSUL_HOST}:${this.CONSUL_PORT}`,
-    )
   }
 
   public async deregisterService() {
     const serviceId = `${this.SERVICE_NAME}-${this.PORT}`
-    try {
-      await fetch(
-        `http://${this.CONSUL_HOST}:${this.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
-        { method: "PUT" },
-      )
-      this.logger.log(`[${this.SERVICE_NAME}] Deregistered from Consul`)
-    } catch (err) {
-      this.logger.error("Failed to deregister from Consul:", err)
-    }
+
+    await fetch(
+      `http://${this.CONSUL_HOST}:${this.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
+      { method: "PUT" },
+    )
   }
 
-  /** Get the base URL for a single service */
+  // Get the base URL for a single service
   async getServiceAddress(serviceName: string): Promise<string | null> {
     try {
       const res = await fetch(
@@ -73,7 +88,6 @@ export class ConsulService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** Fetch all registered services dynamically for gateway proxy */
   async getAllServices(): Promise<Record<string, string>> {
     try {
       const res = await fetch(

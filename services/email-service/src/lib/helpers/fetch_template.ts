@@ -1,13 +1,15 @@
-import discover_service from "./discover_service.js"
+import circuit_breaker from "../utils/circuit_breaker.js"
+import fetch_service from "../utils/fetch_service.js"
 
-const fetch_template = async (
-  template_code: string,
-): Promise<{ body: string; subject: string }> => {
-  const data = await discover_service(
-    "template-service",
-    `api/v1/templates/${template_code}`,
-  )
-  return data.data as { body: string; subject: string }
+export const fetch_template = async (template_code: string) => {
+  const template = circuit_breaker<{ body: string; subject: string }>(
+    async () =>
+      await fetch_service(
+        "template-service",
+        `api/v1/templates/${template_code}`,
+      ),
+    "Template",
+  ).fire()
+
+  return template
 }
-
-export default fetch_template

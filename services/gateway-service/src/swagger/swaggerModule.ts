@@ -1,12 +1,9 @@
-import { Module } from "@nestjs/common"
 import { HttpModule } from "@nestjs/axios"
-import { ConsulModule } from "../consul/consul.module"
-import { SwaggerGateway } from "./swaggerService"
-import { SwaggerController } from "./swaggerController"
+import { Module } from "@nestjs/common"
 
 @Module({
-  imports: [HttpModule, ConsulModule],
-  providers: [SwaggerGateway],
-  controllers: [SwaggerController],
+  imports: [HttpModule],
+  providers: [],
+  controllers: [],
 })
 export class SwaggerModule {}
