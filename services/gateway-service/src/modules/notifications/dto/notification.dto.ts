@@ -1,13 +1,13 @@
+import { Type } from "class-transformer"
 import {
+  IsArray,
   IsEnum,
-  IsString,
-  IsUUID,
   IsInt,
   IsOptional,
+  IsString,
+  IsUUID,
   ValidateNested,
-  IsObject,
 } from "class-validator"
-import { Type } from "class-transformer"
 
 export enum NotificationType {
   EMAIL = "email",
@@ -20,10 +20,6 @@ export class UserDataDto {
 
   @IsString()
   link: string
-
-  @IsOptional()
-  @IsObject()
-  meta?: Record<string, any>
 }
 
 export class CreateNotificationDto {
@@ -31,7 +27,7 @@ export class CreateNotificationDto {
   notification_type: NotificationType
 
   @IsUUID()
-  user_id: string
+  user: string
 
   @IsString()
   template_code: string
@@ -43,10 +39,11 @@ export class CreateNotificationDto {
   @IsString()
   request_id: string
 
+  @IsOptional()
   @IsInt()
   priority: number
 
   @IsOptional()
-  @IsObject()
-  metadata?: Record<string, any>
+  @IsArray()
+  push_tokens?: string[]
 }

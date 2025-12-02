@@ -1,5 +1,5 @@
 import { Logger } from "@nestjs/common"
-import * as CircuitBreaker from "opossum"
+import CircuitBreaker from "opossum"
 
 const options = {
   failureThreshold: 50, // Open after 50% of requests fail
@@ -19,20 +19,20 @@ export class Breaker<T> {
 
     // this.breaker
     this.breaker.on("open", () => {
-      this.logger.error(`Circuit OPEN - ${service} service appears to be down`)
+      this.logger.error(`Circuit OPEN - ${service} appears to be down`)
     })
 
     this.breaker.on("halfOpen", () => {
-      this.logger.warn(`Circuit HALF-OPEN - Testing ${service} service`)
+      this.logger.warn(`Circuit HALF-OPEN - Testing ${service}`)
     })
 
     this.breaker.on("close", () => {
-      this.logger.log(`Circuit CLOSED - ${service} service restored`)
+      this.logger.log(`Circuit CLOSED - ${service} restored`)
     })
   }
 
-  async fire() {
-    const fired: Promise<T> = await this.breaker.fire()
+  async fire(): Promise<T> {
+    const fired = await this.breaker.fire()
 
     return fired
   }

@@ -1,24 +1,25 @@
+import "@fastify/jwt"
 import "fastify"
-import { MySQLPool } from "@fastify/mysql"
-import { JWT } from "@fastify/jwt"
-import { UserWithoutPassword } from "../models/user.model.js"
+
+export interface TokenPayload {
+  sub: number | string
+  email: string
+  name: string
+}
+
+declare module "@fastify/jwt" {
+  interface JWT {
+    access: JWT
+    refresh: JWT
+  }
+}
 
 declare module "fastify" {
   interface FastifyInstance {
-    config: {
-      PORT: number
-      DB_URL: string
-      NODE_ENV: "development" | "production"
-      SERVICE_NAME: string
-      CONSUL_HOST: string
-      CONSUL_PORT: number
-      JWT_SECRET: string
-    }
-    mysql: MySQLPool
-    jwt: JWT
+    mysql: Pool
   }
 
   interface FastifyRequest {
-    user?: UserWithoutPassword
+    user?: TokenPayload
   }
 }

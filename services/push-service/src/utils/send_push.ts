@@ -1,5 +1,5 @@
+import { config } from "@shared/config/index.js"
 import admin from "firebase-admin"
-import app from "../app.js"
 
 // Initialize Firebase Admin SDK
 let firebaseApp: admin.app.App | null = null
@@ -8,9 +8,9 @@ function initializeFirebase(): admin.app.App {
   if (!firebaseApp) {
     firebaseApp = admin.initializeApp({
       credential: admin.credential.cert({
-        projectId: app.config.FCM_PROJECT_ID,
-        clientEmail: app.config.FCM_CLIENT_EMAIL,
-        privateKey: app.config.FCM_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        projectId: config.FCM_PROJECT_ID,
+        clientEmail: config.FCM_CLIENT_EMAIL,
+        privateKey: config.FCM_PRIVATE_KEY.replace(/\\n/g, "\n"),
       }),
     })
   }
@@ -34,9 +34,7 @@ interface PushNotificationResult {
   error?: string
 }
 
-async function send_push_notification(
-  payload: PushNotificationPayload,
-): Promise<PushNotificationResult> {
+async function send_push_notification(payload: PushNotificationPayload) {
   try {
     const firebaseApp = initializeFirebase()
     const messaging = firebaseApp.messaging()
@@ -51,7 +49,7 @@ async function send_push_notification(
       data: payload.data || {},
       android: {
         priority: payload.priority || "normal",
-        ttl: Math.max(0, (payload.ttl ?? 3600) * 1000), //convert seconds to miliseconds duration format
+        ttl: Math.max(0, (payload.ttl ?? 3600) * 1000), //convert seconds to milliseconds duration format
         notification: {
           imageUrl: payload.image,
           clickAction: payload.link,
@@ -84,26 +82,15 @@ async function send_push_notification(
       throw new Error("Invalid or missing FCM registration token")
     }
 
-    const result = await messaging.send(message)
-
-    return {
-      success: true,
-      messageId: result,
-    }
+    await messaging.send(message)
   } catch (error) {
-    console.error("FCM send error:", error)
-
-    let errorMessage = "Unknown error"
+    let errorMessage = null
     if (error instanceof Error) {
       errorMessage = error.message
     } else if (typeof error === "string") {
       errorMessage = error
     }
-
-    return {
-      success: false,
-      error: errorMessage,
-    }
+    console.error("FCM send error:", errorMessage ?? error)
   }
 }
 

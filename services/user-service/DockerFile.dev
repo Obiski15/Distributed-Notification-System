@@ -13,12 +13,15 @@ COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY services/user-service/package.json ./services/user-service/
+COPY shared/package.json ./shared/
+COPY shared/package.json ./shared/
 
 ENV NODE_ENV=development
 
 RUN pnpm install --ignore-scripts
 
 COPY services/user-service ./services/user-service/
+COPY shared ./shared/
 
 EXPOSE 3004
 

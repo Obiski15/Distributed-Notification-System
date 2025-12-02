@@ -1,36 +1,3 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
-echo "🚀 Running pre-commit checks to ensure code quality..."
-
-# Formatting check
-echo "🎨 Checking code formatting..."
-pnpm run check-format || (
-  echo "⚠️ Prettier check failed. Code formatting issues detected.
-  
-  Applying automatic formatting...";
-
-  # Auto-format code
-  pnpm run format;
-  git add .;
-
-  # Notify the user
-  echo "✅ Formatting applied and changes staged. Please review and commit again.";
-)
-
-# Linting check
-# echo "🧐 Running ESLint checks..."
-# pnpm run lint || (
-#   echo "❌ ESLint check failed. Please review the errors above, fix the issues, and commit again.";
-#   exit 1
-# )
-
-# TypeScript type check
-# echo "🔍 Validating TypeScript types..."
-# pnpm run check-types || (
-#   echo "❌ TypeScript check failed. Please resolve the type errors before committing.";
-#   exit 1
-# )
-
-# If all checks pass, allow commit
-echo "✅ All checks passed! Proceeding with commit..."
-echo "🚀 Great job! You can now run 'git push' to upload your changes."
+npx lint-staged

@@ -1,71 +1,96 @@
-import type { MySQLPool } from "@fastify/mysql"
+import type { RowDataPacket } from "@fastify/mysql"
+import * as STATUS_CODES from "@shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
+import AppError from "@shared/utils/AppError.js"
+import { type FastifyInstance } from "fastify"
 
-export interface User {
-  id?: number
-  user_id: string
+import { BaseModel } from "./base.model.js"
+
+export interface User extends RowDataPacket {
+  id: number
   email: string
   password: string
   name: string
+  preferences?: {
+    push_notification_enabled: boolean
+    email_notification_enabled: boolean
+  }
+  push_tokens?: string[]
   created_at?: string
   updated_at?: string
 }
 
-export interface UserWithoutPassword {
-  user_id: string
-  email: string
-  name: string
-  created_at?: string
-  updated_at?: string
+export type UserWithoutPassword = Omit<User, "password" | "id">
+
+export class UserModel extends BaseModel {
+  constructor(fastify: FastifyInstance) {
+    super(fastify)
+  }
+
+  update_user = async (data: UpdateUser, id: string) => {
+    const setClauses: string[] = []
+    const values: any[] = []
+
+    if (data.email) {
+      const existingUser = await this.find_by_email(data.email)
+
+      if (existingUser.id !== id)
+        throw new AppError(
+          SYSTEM_MESSAGES.USER_ALREADY_EXISTS,
+          STATUS_CODES.CONFLICT,
+        )
+    }
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined) {
+        setClauses.push(`${key} = ?`)
+        values.push(value)
+      }
+    })
+
+    if (setClauses.length === 0) {
+      throw new AppError(
+        SYSTEM_MESSAGES.NO_VALID_UPDATE_FIELDS,
+        STATUS_CODES.BAD_REQUEST,
+      )
+    }
+
+    await this.find_by_id(id)
+
+    await this.fastify.mysql.query(
+      `UPDATE users SET ${setClauses.join(", ")} WHERE id = ?`,
+      [...values, id],
+    )
+
+    await this.fastify.mysql.query("SELECT * FROM users WHERE id = ?", [id])
+  }
+
+  update_preferences = async (data: UpdatePreferences, id: string) => {
+    const user = await this.find_by_id(id)
+
+    const updatedPreferences = { ...user.preferences, ...data.preferences }
+
+    await this.fastify.mysql.query(
+      "UPDATE users SET preferences = ? WHERE id = ?",
+      [JSON.stringify(updatedPreferences), id],
+    )
+  }
+
+  push_tokens = async (token: string, id: string) => {
+    const user = await this.find_by_id(id)
+
+    const currentTokens = user?.push_tokens || []
+
+    if (currentTokens.includes(token))
+      return SYSTEM_MESSAGES.PUSH_TOKEN_ALREADY_EXISTS
+
+    const updatedTokens = [...currentTokens, token]
+
+    await this.fastify.mysql.query(
+      "UPDATE users SET push_tokens = ? WHERE id = ?",
+      [JSON.stringify(updatedTokens), id],
+    )
+
+    return SYSTEM_MESSAGES.PUSH_TOKEN_UPDATED
+  }
 }
-
-export class UserModel {
-  private db: MySQLPool
-
-  constructor(db: MySQLPool) {
-    this.db = db
-  }
-
-  async create(
-    userData: Omit<User, "id" | "created_at" | "updated_at">,
-  ): Promise<UserWithoutPassword> {
-    await this.db.execute(
-      "INSERT INTO users (user_id, email, password, name) VALUES (?, ?, ?, ?)",
-      [userData.user_id, userData.email, userData.password, userData.name],
-    )
-
-    const userResult = await this.db.execute(
-      "SELECT user_id, email, name, created_at, updated_at FROM users WHERE user_id = ?",
-      [userData.user_id],
-    )
-
-    const users = (userResult as any)[0] as UserWithoutPassword[]
-    return users[0]!
-  }
-
-  async findByEmail(email: string): Promise<User | null> {
-    const result = await this.db.execute(
-      "SELECT * FROM users WHERE email = ?",
-      [email],
-    )
-
-    const users = (result as any)[0] as User[]
-    return users.length > 0 ? users[0]! : null
-  }
-
-  async findByUserId(user_id: string): Promise<UserWithoutPassword | null> {
-    const result = await this.db.execute(
-      "SELECT user_id, email, name, preferences, push_tokens, created_at, updated_at FROM users WHERE user_id = ?",
-      [user_id],
-    )
-
-    const users = (result as any)[0] as UserWithoutPassword[]
-    return users.length > 0 ? users[0]! : null
-  }
-
-  async emailExists(email: string): Promise<boolean> {
-    const user = await this.findByEmail(email)
-    return user !== null
-  }
-}
-
-export default UserModel

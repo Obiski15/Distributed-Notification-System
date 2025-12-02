@@ -1,124 +1,192 @@
-import amqplib from "amqplib"
+import amqplib, { ConsumeMessage } from "amqplib"
 import mustache from "mustache"
 import type { SendMailOptions } from "nodemailer"
 
-import app from "../app.js"
+import { config } from "@shared/config/index.js"
 import { fetch_template } from "../lib/helpers/fetch_template.js"
 import update_notification_status from "../lib/helpers/update_notification_status.js"
+
+// --- TYPES ---
+
+// 1. Define the exact shape of the message coming from RabbitMQ
+interface EmailQueueMessage {
+  template_code: string
+  email: string
+  notification_id?: string // Optional because not all system emails might be tracked in DB
+  variables?: Record<string, string> // Key-value pairs for Mustache
+  priority?: number
+}
+
+// --- CONSTANTS ---
+const EXCHANGE_NAME = config.NOTIFICATION_EXCHANGE
+const RETRY_DELAY_MS = config.NOTIFICATION_RETRY_DELAY
+const MAX_RETRIES = config.NOTIFICATION_MAX_RETRIES
 
 let connection: amqplib.ChannelModel | null = null
 let channel: amqplib.Channel | null = null
 
-export const get_channel = async () => {
-  if (!connection) {
-    connection = await amqplib.connect(app.config.RABBITMQ_CONNECTION_URL)
+export const get_channel = async (): Promise<amqplib.Channel> => {
+  if (connection && channel) return channel
 
-    connection.on("error", err => {
+  try {
+    connection = await amqplib.connect(config.RABBITMQ_CONNECTION_URL)
+
+    connection.on("error", (err: Error) => {
       console.error("RabbitMQ connection error:", err)
       connection = null
       channel = null
     })
 
     connection.on("close", () => {
-      console.log("RabbitMQ connection closed")
+      console.warn("RabbitMQ connection closed")
       connection = null
       channel = null
     })
-  }
 
-  if (!channel) {
     channel = await connection.createChannel()
-  }
 
-  return channel
+    return channel
+  } catch (error) {
+    console.error("Failed to connect to RabbitMQ", error)
+    throw error
+  }
 }
 
 export const consume_queue = async (
-  routingKey: "email" | "push",
   callback: (data: SendMailOptions) => Promise<void>,
-) => {
+): Promise<void> => {
   const ch = await get_channel()
 
-  // Main exchange
-  ch.assertExchange("notifications.direct", "direct", {
+  const mainKey = config.EMAIL_ROUTING_KEY
+  const waitKey = `${mainKey}.wait`
+  const failedKey = `${mainKey}.failed`
+
+  // Assert Exchange
+  await ch.assertExchange(EXCHANGE_NAME, "topic", {
     durable: true,
     autoDelete: false,
   })
 
-  // Main queue with dead letter exchange configured
-  await ch.assertQueue(`${routingKey}.queue`, {
+  // Main Queue
+  await ch.assertQueue(`${mainKey}.queue`, {
     durable: true,
-    autoDelete: false,
-    deadLetterExchange: "notifications.direct",
-    deadLetterRoutingKey: "failed",
+    deadLetterExchange: EXCHANGE_NAME,
+    deadLetterRoutingKey: failedKey,
   })
+  await ch.bindQueue(`${mainKey}.queue`, EXCHANGE_NAME, mainKey)
 
-  // Create dead letter queue for failed messages
-  await ch.assertQueue(`${routingKey}.failed`, {
+  // Wait Queue
+  await ch.assertQueue(`${mainKey}.wait`, {
     durable: true,
-    autoDelete: false,
+    messageTtl: RETRY_DELAY_MS,
+    deadLetterExchange: EXCHANGE_NAME,
+    deadLetterRoutingKey: mainKey,
   })
+  await ch.bindQueue(`${mainKey}.wait`, EXCHANGE_NAME, waitKey)
 
-  // Bind exchange with queues
-  await ch.bindQueue(`${routingKey}.failed`, "notifications.direct", "failed")
-  await ch.bindQueue(`${routingKey}.queue`, "notifications.direct", routingKey)
+  // Failed Queue
+  await ch.assertQueue(`${mainKey}.failed`, { durable: true })
+  await ch.bindQueue(`${mainKey}.failed`, EXCHANGE_NAME, failedKey)
 
-  let messagePriority: number = 0
+  console.log(`🐰 Waiting for messages in ${mainKey}.queue`)
 
-  ch.consume(
-    `${routingKey}.queue`,
-    async (msg: any) => {
-      if (msg) {
-        let data: null | {
-          template_code: string
-          email: string
-          notification_id: string
-          variables: Record<string, string>
-          priority: number
-        } = null
+  //  Limit unacknowledged messages to 10
+  await ch.prefetch(10)
 
-        console.log(`\n📨 Received message on ${routingKey}.queue`)
+  await ch.consume(`${mainKey}.queue`, (msg: ConsumeMessage | null) => {
+    if (msg) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      ;(async () => {
+        let parsedData: EmailQueueMessage | null = null
 
         try {
-          data = JSON.parse(msg.content.toString())
+          parsedData = JSON.parse(msg.content.toString()) as EmailQueueMessage
 
-          if (data) {
-            messagePriority = data.priority ?? 0
-            // fetch template
-            const template = await fetch_template(data!.template_code)
+          const { template_code, email, notification_id, variables } =
+            parsedData
 
-            const html = mustache.render(template.body, data.variables)
-
-            await callback({
-              to: data.email,
-              subject: template.subject,
-              from: "<hng.notification@gmail.com>",
-              html,
-            })
-
-            // mark notification as delivered
-            update_notification_status({
-              status: "delivered",
-              notification_id: data?.notification_id!,
-            })
-            ch.ack(msg)
+          if (!email || !template_code) {
+            console.error(
+              "❌ Malformed message: Missing email or template_code",
+            )
+            ch.nack(msg, false, false)
+            return
           }
-        } catch (error) {
-          //  mark notification as failed
-          update_notification_status({
-            status: "failed",
-            notification_id: data?.notification_id!,
-            error: (error as Error).message,
-          })
-          ch.nack(msg, false, false)
+
           console.log(
-            `💀 Message sent to Dead Letter Queue: ${routingKey}.failed\n`,
+            `📨 Processing email for ${email} (Template: ${template_code})`,
           )
+
+          const template = await fetch_template(template_code)
+
+          const html = mustache.render(template.body || "", variables || {})
+          const subject = mustache.render(
+            template.subject || "",
+            variables || {},
+          )
+
+          await callback({
+            to: email,
+            subject: subject,
+            from: config.SMTP_FROM,
+            html,
+          })
+
+          if (notification_id) {
+            await update_notification_status({
+              status: "delivered",
+              notification_id,
+            })
+          }
+
+          ch.ack(msg)
+          console.log(`✅ Email sent successfully to ${email}`)
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error"
+          console.error("❌ Error processing email:", errorMessage)
+
+          // RETRY LOGIC
+          if (error instanceof SyntaxError) {
+            console.error("Fatal JSON error. Sending to DLQ.")
+            ch.nack(msg, false, false)
+            return
+          }
+
+          const headers = msg.properties.headers || {}
+          const retryCount = (headers["x-retry-count"] || 0) as number
+
+          if (retryCount < MAX_RETRIES) {
+            console.warn(
+              `⏳ Retrying (${
+                retryCount + 1
+              }/${MAX_RETRIES})... sending to ${waitKey}`,
+            )
+
+            ch.publish(EXCHANGE_NAME, waitKey, msg.content, {
+              persistent: true,
+              headers: { "x-retry-count": retryCount + 1 },
+            })
+
+            ch.ack(msg)
+          } else {
+            console.error(`💀 Max retries reached. Sending to Dead Letter.`)
+
+            // Update DB status if we have the ID from the partial parse
+            if (parsedData?.notification_id) {
+              await update_notification_status({
+                status: "failed",
+                notification_id: parsedData.notification_id,
+                error: errorMessage,
+              }).catch((e: unknown) =>
+                console.error("Failed to update status DB:", e),
+              )
+            }
+
+            ch.nack(msg, false, false)
+          }
         }
-      }
-    },
-    {
-      priority: messagePriority,
-    },
-  )
+      })()
+    }
+  })
 }

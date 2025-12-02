@@ -7,29 +7,19 @@
   "scripts": {
     "dev": "npx tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "lint": "echo 'No linter configured for email-service'",
-    "type-check": "tsc --noEmit"
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "dependencies": {
-    "@fastify/env": "^5.0.3",
-    "@types/node": "^22.19.0",
-    "amqplib": "^0.10.9",
+    "@shared": "workspace:*",
     "mustache": "^4.2.0",
-    "nodemailer": "^7.0.10",
-    "opossum": "^9.0.0",
-    "typescript": "^5.9.3"
+    "nodemailer": "^7.0.10"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.10.8",
     "@types/mustache": "^4.2.6",
-    "@types/nodemailer": "^7.0.3",
-    "@types/opossum": "^8.1.9",
-    "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.19.2"
+    "@types/nodemailer": "^7.0.3"
   }
 }

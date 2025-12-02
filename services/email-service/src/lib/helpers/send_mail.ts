@@ -1,19 +1,20 @@
+import type { SendMailOptions, Transporter } from "nodemailer"
 import nodemailer from "nodemailer"
 
-import type { SendMailOptions, Transporter } from "nodemailer"
-import app from "../../app.js"
+import { config } from "@shared/config/index.js"
 
 let transporter: Transporter
 
 function create_transporter(): Transporter {
+  // eslint-disable-next-line
   return nodemailer.createTransport({
-    host: app.config.SMTP_HOST,
-    port: app.config.SMTP_PORT,
+    host: config.SMTP_HOST,
+    port: config.SMTP_PORT,
     auth: {
-      user: app.config.SMTP_USER,
-      pass: app.config.SMTP_PASS,
+      user: config.SMTP_USER,
+      pass: config.SMTP_PASS,
     },
-  })
+  } as any)
 }
 
 function get_transporter(): Transporter {
@@ -30,20 +31,13 @@ async function send_mail({
   subject,
   ...rest
 }: SendMailOptions) {
-  try {
-    const result = await get_transporter().sendMail({
-      from,
-      to,
-      subject,
-      html,
-      ...rest,
-    })
-
-    return result
-  } catch (e) {
-    console.error(e)
-    throw e
-  }
+  await get_transporter().sendMail({
+    from,
+    to,
+    subject,
+    html,
+    ...rest,
+  })
 }
 
 export default send_mail

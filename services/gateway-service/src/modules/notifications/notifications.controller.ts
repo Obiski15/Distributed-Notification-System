@@ -8,6 +8,7 @@ import {
   Post,
 } from "@nestjs/common"
 import { UpdateNotificationStatusDto } from "./dto/notification-status.dto"
+import { CreateNotificationDto } from "./dto/notification.dto"
 import {
   NotificationResponse,
   NotificationsService,
@@ -15,33 +16,29 @@ import {
 
 @Controller("notifications")
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(private readonly notificationService: NotificationsService) {}
 
-  // Queue notifications (email | push)
+  // Queue notifications
   @Post("/")
   @HttpCode(HttpStatus.ACCEPTED)
-  queueNotification() {
-    return "notification triggered"
-    //  this.notificationsService.handleNotification(body)
+  queueNotification(@Body() body: CreateNotificationDto) {
+    return this.notificationService.handleNotification(body)
   }
 
-  // Update notification status (email/push)
+  // Update notification status
   @Post("/:notification_preference/status")
-  async updateStatus(
+  @HttpCode(HttpStatus.CREATED)
+  updateStatus(
     @Param("notification_preference") notification_preference: string,
     @Body() body: UpdateNotificationStatusDto,
   ): Promise<NotificationResponse> {
-    return await this.notificationsService.updateStatus(
-      notification_preference,
-      body,
-    )
+    return this.notificationService.updateStatus(notification_preference, body)
   }
 
-  // Get notification status by request_id
   @Get("/:request_id")
-  async getStatus(
+  getStatus(
     @Param("request_id") request_id: string,
   ): Promise<NotificationResponse> {
-    return await this.notificationsService.getStatus(request_id)
+    return this.notificationService.getStatus(request_id)
   }
 }

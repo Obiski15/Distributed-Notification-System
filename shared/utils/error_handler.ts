@@ -1,0 +1,29 @@
+import type { FastifyReply, FastifyRequest } from "fastify"
+import * as STATUS_CODES from "../constants/status-codes"
+import * as SYSTEM_MESSAGES from "../constants/system-message"
+
+interface IError extends Error {
+  status_code?: number
+  is_operational?: boolean
+  validation?: any
+}
+
+const errorHandler = (
+  error: unknown,
+  _request: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  console.log("Error Handler:", error)
+  const err = error as IError
+
+  reply.status(err.status_code ?? STATUS_CODES.INTERNAL_SERVER_ERROR).send({
+    success: false,
+    status_code: err.status_code ?? STATUS_CODES.INTERNAL_SERVER_ERROR,
+    message: err.is_operational
+      ? err.message
+      : SYSTEM_MESSAGES.INTERNAL_SERVER_ERROR,
+    error: err.validation ?? undefined,
+  })
+}
+
+export default errorHandler

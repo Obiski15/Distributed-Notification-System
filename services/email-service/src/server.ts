@@ -1,3 +1,4 @@
+import { config } from "@shared/config/index.js"
 import app from "./app.js"
 import send_mail from "./lib/helpers/send_mail.js"
 import { consume_queue } from "./queue/rabbitmq.js"
@@ -5,18 +6,18 @@ import { consume_queue } from "./queue/rabbitmq.js"
 // Register service with Consul
 async function registerService() {
   const body = {
-    Name: app.config.SERVICE_NAME,
-    ID: `${app.config.SERVICE_NAME}-${app.config.PORT}`,
-    Address: app.config.SERVICE_NAME,
-    Port: app.config.PORT,
+    Name: config.EMAIL_SERVICE,
+    ID: `${config.EMAIL_SERVICE}-${config.EMAIL_SERVICE_PORT}`,
+    Address: config.EMAIL_SERVICE,
+    Port: config.EMAIL_SERVICE_PORT,
     Check: {
-      HTTP: `http://${app.config.SERVICE_NAME}:${app.config.PORT}/health`,
+      HTTP: `http://${config.EMAIL_SERVICE}:${config.EMAIL_SERVICE_PORT}/health`,
       Interval: "10s",
     },
   }
 
   await fetch(
-    `http://${app.config.CONSUL_HOST}:${app.config.CONSUL_PORT}/v1/agent/service/register`,
+    `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/register`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -25,19 +26,19 @@ async function registerService() {
   )
 
   console.log(
-    `[${app.config.SERVICE_NAME}] Registered with Consul at ${app.config.CONSUL_HOST}:${app.config.CONSUL_PORT}`,
+    `[${config.EMAIL_SERVICE}] Registered with Consul at ${config.CONSUL_HOST}:${config.CONSUL_PORT}`,
   )
 }
 
 async function deregisterService() {
-  const serviceId = `${app.config.SERVICE_NAME}-${app.config.PORT}`
+  const serviceId = `${config.EMAIL_SERVICE}-${config.EMAIL_SERVICE_PORT}`
 
   try {
     await fetch(
-      `http://${app.config.CONSUL_HOST}:${app.config.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
+      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
       { method: "PUT" },
     )
-    console.log(`[${app.config.SERVICE_NAME}] Deregistered from Consul`)
+    console.log(`[${config.EMAIL_SERVICE}] Deregistered from Consul`)
   } catch (err) {
     console.error("Failed to deregister from Consul:", err)
   }
@@ -53,14 +54,14 @@ const gracefulShutdown = async (signal: string) => {
   process.exit(0)
 }
 
-process.on("SIGINT", () => gracefulShutdown("SIGINT"))
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
+process.on("SIGINT", () => void gracefulShutdown("SIGINT"))
+process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"))
 
 const start = async () => {
   try {
-    await app.listen({ port: app.config.PORT, host: "0.0.0.0" })
-    await consume_queue("email", send_mail)
-    console.log(`Email service listening on port ${app.config.PORT}`)
+    await app.listen({ port: config.EMAIL_SERVICE_PORT, host: config.HOST })
+    await consume_queue(send_mail)
+    console.log(`Email service listening on port ${config.EMAIL_SERVICE_PORT}`)
 
     await registerService()
   } catch (err) {

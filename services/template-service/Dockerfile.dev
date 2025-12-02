@@ -13,12 +13,15 @@ COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY services/template-service/package.json ./services/template-service/
+COPY shared/package.json ./shared/
 
 ENV NODE_ENV=development
 
 RUN pnpm install --ignore-scripts
 
 COPY services/template-service ./services/template-service/
+
+COPY shared ./shared/
 
 EXPOSE 3002
 

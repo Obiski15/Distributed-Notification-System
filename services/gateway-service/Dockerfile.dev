@@ -9,16 +9,17 @@ WORKDIR /app
 
 # Dependency Installation 
 
-COPY pnpm-workspace.yaml ./
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml ./
 COPY services/gateway-service/package.json ./services/gateway-service/
+COPY shared/package.json ./shared/
 
 ENV NODE_ENV=development
 
 RUN pnpm install --ignore-scripts
 
 COPY services/gateway-service ./services/gateway-service/
+COPY shared ./shared/
+
 
 EXPOSE 3000
 

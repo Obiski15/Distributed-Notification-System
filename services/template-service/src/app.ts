@@ -1,20 +1,16 @@
-import env from "@fastify/env"
 import mysql from "@fastify/mysql"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
 
-import error_handler from "./lib/utils/error_handler.js"
+import { config } from "@shared/config/index.js"
+import * as STATUS_CODES from "@shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
+import error_handler from "@shared/utils/error_handler.js"
+
 import template_routes from "./routes/template_route.js"
-import { env_schema } from "./schema.js"
 
-const app = Fastify({ logger: true })
-
-await app.register(env, {
-  confKey: "config",
-  schema: env_schema,
-  dotenv: true,
-})
+const app = Fastify({ logger: false })
 
 await app.register(swagger, {
   openapi: {
@@ -22,7 +18,7 @@ await app.register(swagger, {
       title: "Template Service",
       version: "1.0.0",
     },
-    servers: [{ url: "http://localhost:" + app.config.PORT }],
+    servers: [{ url: "http://localhost:" + config.TEMPLATE_SERVICE_PORT }],
   },
 })
 
@@ -37,20 +33,25 @@ await app.register(swaggerUi, {
 
 app.register(mysql, {
   promise: true,
-  connectionString: app.config.DB_URL,
+  connectionString: config.TEMPLATE_SERVICE_DB,
 })
 
 app.register(template_routes, { prefix: "/api/v1/templates" })
 
 app.get("/health", async (_request, reply) => {
-  reply.send({ status: "ok" })
+  reply.send({
+    success: true,
+    status_code: STATUS_CODES.OK,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  })
 })
 
 app.setNotFoundHandler((_request, reply) => {
-  reply.status(404).send({
+  reply.status(STATUS_CODES.NOT_FOUND).send({
     success: false,
-    statusCode: 404,
-    message: "Not Found",
+    status_code: STATUS_CODES.NOT_FOUND,
+    message: SYSTEM_MESSAGES.RESOURCE_NOT_FOUND,
   })
 })
 

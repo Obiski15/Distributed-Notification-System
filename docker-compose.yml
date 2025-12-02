@@ -25,7 +25,7 @@ services:
       - "5672:5672" # AMQP
       - "15672:15672" # Dashboard
     env_file:
-      - .env
+      - .env.production
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -66,7 +66,7 @@ services:
     ports:
       - "3306:3306"
     env_file:
-      - .env
+      - .env.production
     command: --default-authentication-plugin=mysql_native_password
     volumes:
       - mysql-data:/var/lib/mysql
@@ -88,7 +88,7 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - ./services/gateway-service/.env.production
+      - .env.production
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -108,7 +108,7 @@ services:
     ports:
       - "3001:3001"
     env_file:
-      - ./services/email-service/.env.production
+      - .env.production
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -126,7 +126,7 @@ services:
     ports:
       - "3002:3002"
     env_file:
-      - ./services/template-service/.env.production
+      - .env.production
     depends_on:
       mysql:
         condition: service_healthy
@@ -144,7 +144,7 @@ services:
     ports:
       - "3003:3003"
     env_file:
-      - ./services/push-service/.env.production
+      - .env.production
     depends_on:
       mysql:
         condition: service_healthy
@@ -164,7 +164,7 @@ services:
     ports:
       - "3004:3004"
     env_file:
-      - ./services/user-service/.env.production
+      - .env.production
     depends_on:
       mysql:
         condition: service_healthy

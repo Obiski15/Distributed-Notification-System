@@ -1,5 +1,4 @@
 import { ValidationPipe } from "@nestjs/common"
-import { ConfigService } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
 import {
   FastifyAdapter,
@@ -7,6 +6,7 @@ import {
 } from "@nestjs/platform-fastify"
 import { AppModule } from "./app.module"
 // import { SwaggerGateway } from "./swagger/swaggerService"
+import { config } from "@shared/config/index"
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -32,7 +32,9 @@ async function bootstrap() {
   instance.get("/health", (_req, reply) => {
     reply.send({
       success: true,
-      message: "Gateway service healthy",
+      status_code: 200,
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
     })
   })
 
@@ -68,10 +70,8 @@ async function bootstrap() {
     })
   })
 
-  const PORT = app.get(ConfigService).get("PORT") as number
-
-  await app.listen(PORT, "0.0.0.0")
-  console.log(`API Gateway listening on PORT ${PORT}`)
+  await app.listen(config.GATEWAY_SERVICE_PORT, config.HOST)
+  console.log(`API Gateway listening on PORT ${config.GATEWAY_SERVICE_PORT}`)
 }
 
 bootstrap()

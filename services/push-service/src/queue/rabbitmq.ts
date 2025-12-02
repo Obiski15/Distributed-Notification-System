@@ -1,128 +1,179 @@
-import amqplib from "amqplib"
-import app from "../app.js"
+import amqplib, { ConsumeMessage } from "amqplib"
 import {
   validate_device_token,
   type PushNotificationPayload,
 } from "../utils/send_push.js"
 
+import { config } from "@shared/config/index.js"
+
 let connection: amqplib.ChannelModel | null = null
 let channel: amqplib.Channel | null = null
 
-export const get_channel = async () => {
-  if (!connection) {
-    connection = await amqplib.connect(app.config.RABBITMQ_CONNECTION_URL)
+export const get_channel = async (): Promise<amqplib.Channel> => {
+  if (connection && channel) return channel
 
-    connection.on("error", (err: any) => {
+  try {
+    connection = await amqplib.connect(config.RABBITMQ_CONNECTION_URL)
+
+    connection.on("error", (err: Error) => {
       console.error("RabbitMQ connection error:", err)
       connection = null
       channel = null
     })
 
     connection.on("close", () => {
-      console.log("RabbitMQ connection closed")
+      console.warn("RabbitMQ connection closed")
       connection = null
       channel = null
     })
-  }
 
-  if (!channel) {
     channel = await connection.createChannel()
-  }
 
-  return channel
+    return channel
+  } catch (error) {
+    console.error("Failed to connect to RabbitMQ", error)
+    throw error
+  }
 }
 
 export const consume_queue = async (
   callback: (data: PushNotificationPayload) => Promise<void>,
 ) => {
-  const routingKey = "push"
-
   const ch = await get_channel()
+  const mainKey = config.PUSH_ROUTING_KEY
+  const waitKey = `${mainKey}.wait`
+  const failedKey = `${mainKey}.failed`
 
-  // Main exchange
-  ch.assertExchange("notifications.direct", "direct", {
+  // Exchange
+  await ch.assertExchange(config.NOTIFICATION_EXCHANGE, "topic", {
     durable: true,
     autoDelete: false,
   })
 
-  // Main queue with dead letter exchange configured
-  await ch.assertQueue(`${routingKey}.queue`, {
+  // Main Queue
+  await ch.assertQueue(`${mainKey}.queue`, {
     durable: true,
-    autoDelete: false,
-    deadLetterExchange: "notifications.direct",
-    deadLetterRoutingKey: "failed",
+    deadLetterExchange: config.NOTIFICATION_EXCHANGE,
+    deadLetterRoutingKey: failedKey,
   })
+  await ch.bindQueue(`${mainKey}.queue`, config.NOTIFICATION_EXCHANGE, mainKey)
 
-  // Create dead letter queue for failed messages
-  await ch.assertQueue(`${routingKey}.failed`, {
+  // Wait Queue
+  // Messages sit here for 20s, then go BACK to "push" (mainKey)
+  await ch.assertQueue(`${mainKey}.wait`, {
     durable: true,
-    autoDelete: false,
+    messageTtl: config.NOTIFICATION_RETRY_DELAY,
+    deadLetterExchange: config.NOTIFICATION_EXCHANGE,
+    deadLetterRoutingKey: mainKey,
   })
+  await ch.bindQueue(`${mainKey}.wait`, config.NOTIFICATION_EXCHANGE, waitKey)
 
-  // Bind exchange with queues
-  await ch.bindQueue(`${routingKey}.failed`, "notifications.direct", "failed")
-  await ch.bindQueue(`${routingKey}.queue`, "notifications.direct", routingKey)
+  // Failed Queue
+  await ch.assertQueue(`${mainKey}.failed`, {
+    durable: true,
+  })
+  await ch.bindQueue(
+    `${mainKey}.failed`,
+    config.NOTIFICATION_EXCHANGE,
+    failedKey,
+  )
 
-  ch.consume(`${routingKey}.queue`, async (msg: any) => {
+  console.log(`🐰 Waiting for messages in ${mainKey}.queue`)
+
+  // Limit unacknowledged messages to 10
+  await ch.prefetch(10)
+
+  await ch.consume(`${mainKey}.queue`, (msg: ConsumeMessage | null) => {
     if (msg) {
-      console.log(`\n📨 Received message on ${routingKey}.queue`)
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      ;(async () => {
+        try {
+          const data = JSON.parse(msg.content.toString()) as {
+            template_code: string
+            push_tokens: string[]
+            priority: number
+            user_id?: string
+            title?: string
+            metadata?: Record<string, string>
+          }
 
-      try {
-        const data = JSON.parse(msg.content.toString()) as {
-          template_code: string
-          push_tokens: string[]
-          priority: number
-          user_id?: string
-          title?: string
-          metadata?: Record<string, string>
-        }
-
-        if (!data.push_tokens.length) {
-          console.error("No push tokens provided")
-          ch.nack(msg, false, false)
-          return
-        }
-
-        console.log(data.push_tokens)
-
-        for (const token of data.push_tokens) {
-          const isValidToken = await validate_device_token(token)
-
-          if (!isValidToken) {
-            console.error(`Invalid device token: ${token}`)
+          if (
+            !Array.isArray(data.push_tokens) ||
+            data.push_tokens.length === 0
+          ) {
+            console.error("❌ Malformed message: No push tokens")
             ch.nack(msg, false, false)
             return
           }
 
-          const pushPayload: PushNotificationPayload = {
-            token,
-            title: "Notification",
-            body: "You have a new notification",
-            image: `https://picsum.photos/${randomNumber(500, 599)}`,
-            link: "https://example.com",
-            data: {
-              ...data.metadata,
-              ...(data.user_id && { user_id: data.user_id }),
-              template_code: data.template_code,
-            },
-            priority: data.priority > 5 ? "high" : "normal",
-            ttl: 86400,
+          const valid_promises = data.push_tokens.map(async token => {
+            const isValidToken = await validate_device_token(token)
+
+            if (!isValidToken) {
+              console.error(`Skipping invalid device token: ${token}`)
+              return null
+            }
+
+            const pushPayload: PushNotificationPayload = {
+              token,
+              title: "Notification",
+              body: "You have a new notification",
+              image: `https://picsum.photos/${randomNumber(500, 599)}`,
+              link: "https://example.com",
+              data: {
+                ...data.metadata,
+                ...(data.user_id && { user_id: data.user_id }),
+                template_code: data.template_code,
+              },
+              priority: data.priority > 5 ? "high" : "normal",
+              ttl: 86400,
+            }
+
+            try {
+              await callback(pushPayload)
+              return token
+            } catch (err) {
+              console.error(`❌ Failed to send to token ${token}:`, err)
+              return null
+            }
+          })
+
+          await Promise.all(valid_promises)
+
+          ch.ack(msg)
+          console.log(
+            `✅ Batch processed for ${data.push_tokens.length} tokens`,
+          )
+        } catch (error) {
+          if (error instanceof SyntaxError) {
+            console.error(
+              "❌ Fatal JSON Parse Error. Sending to DLQ immediately.",
+            )
+            ch.nack(msg, false, false)
+            return
           }
 
-          console.log("Sending push notification:", pushPayload)
+          const headers = msg.properties.headers || {}
+          const retryCount = (headers["x-retry-count"] || 0) as number
 
-          await callback(pushPayload)
+          if (retryCount < config.NOTIFICATION_MAX_RETRIES) {
+            console.warn(
+              `⚠️ Retrying (${retryCount + 1}/${config.NOTIFICATION_MAX_RETRIES})...`,
+            )
+
+            ch.publish(config.NOTIFICATION_EXCHANGE, waitKey, msg.content, {
+              persistent: true,
+              headers: { "x-retry-count": retryCount + 1 },
+            })
+
+            // Ack the original (we made a copy in the wait queue)
+            ch.ack(msg)
+          } else {
+            console.error(error, `💀 Max retries. Sending to Dead Letter.`)
+            ch.nack(msg, false, false)
+          }
         }
-
-        ch.ack(msg)
-        console.log(`✅ Push notification(s) sent successfully`)
-      } catch (error) {
-        console.error("❌ Error processing push notification:", error)
-        ch.nack(msg, false, false)
-        console.log(
-          `💀 Message sent to Dead Letter Queue: ${routingKey}.failed\n`,
-        )
-      }
+      })()
     }
   })
 }

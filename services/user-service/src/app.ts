@@ -1,21 +1,20 @@
-import env from "@fastify/env"
 import jwt from "@fastify/jwt"
 import mysql from "@fastify/mysql"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
 
-import error_handler from "./lib/utils/error_handler.js"
+import { config } from "@shared/config/index.js"
+import error_handler from "@shared/utils/error_handler.js"
 import auth_routes from "./routes/auth.routes.js"
 import user_route from "./routes/user.routes.js"
-import env_schema from "./schema/env.schema.js"
 
-const app = Fastify({ logger: true })
+import * as STATUS_CODES from "@shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
+import health_schema from "@shared/schemas/health-schema.js"
 
-await app.register(env, {
-  confKey: "config",
-  schema: env_schema,
-  dotenv: true,
+const app = Fastify({
+  logger: { level: "error" },
 })
 
 await app.register(swagger, {
@@ -24,7 +23,7 @@ await app.register(swagger, {
       title: "User Service",
       version: "1.0.0",
     },
-    servers: [{ url: "http://localhost:" + app.config.PORT }],
+    servers: [{ url: "http://localhost:" + config.USER_SERVICE_PORT }],
   },
 })
 
@@ -39,11 +38,19 @@ await app.register(swaggerUi, {
 
 await app.register(mysql, {
   promise: true,
-  connectionString: app.config.DB_URL,
+  connectionString: config.USER_SERVICE_DB,
 })
 
-app.register(jwt, {
-  secret: app.config.JWT_SECRET,
+await app.register(jwt, {
+  namespace: "access",
+  secret: config.JWT_ACCESS_SECRET,
+  sign: { expiresIn: config.JWT_ACCESS_SECRET_EXPIRES_IN },
+})
+
+await app.register(jwt, {
+  namespace: "refresh",
+  secret: config.JWT_REFRESH_SECRET,
+  sign: { expiresIn: config.JWT_REFRESH_SECRET_EXPIRES_IN },
 })
 
 app.register(auth_routes, { prefix: "/api/v1/auth" })
@@ -52,30 +59,23 @@ app.register(user_route, { prefix: "/api/v1/users" })
 app.get(
   "/health",
   {
-    schema: {
-      description: "Check if the user service is healthy.",
-      tags: ["Health"],
-      response: {
-        200: {
-          type: "object",
-          properties: {
-            success: { type: "boolean" },
-            message: { type: "string", example: "ok" },
-          },
-        },
-      },
-    },
+    schema: health_schema,
   },
   async (_request, reply) => {
-    reply.send({ success: true, message: "ok" })
+    reply.send({
+      success: true,
+      status_code: STATUS_CODES.OK,
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    })
   },
 )
 
 app.setNotFoundHandler((_request, reply) => {
-  reply.status(404).send({
+  reply.status(STATUS_CODES.NOT_FOUND).send({
     success: false,
-    statusCode: 404,
-    message: "Not Found",
+    status_code: STATUS_CODES.NOT_FOUND,
+    message: SYSTEM_MESSAGES.RESOURCE_NOT_FOUND,
   })
 })
 

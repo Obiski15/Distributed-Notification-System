@@ -13,12 +13,14 @@ COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY services/email-service/package.json ./services/email-service/
+COPY shared/package.json ./shared/
 
 ENV NODE_ENV=development
 
 RUN pnpm install --ignore-scripts
 
 COPY services/email-service ./services/email-service/
+COPY shared ./shared/
 
 EXPOSE 3001
 

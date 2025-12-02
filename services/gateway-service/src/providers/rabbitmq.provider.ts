@@ -4,8 +4,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common"
-import { ConfigService } from "@nestjs/config"
-
+import { config } from "@shared/config/index"
 import * as amqp from "amqplib"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
@@ -18,18 +17,10 @@ interface IPublish<T> {
 
 @Injectable()
 export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
-  public channel: amqp.Channel
-  private connection: amqp.ChannelModel
-  private readonly RABBITMQ_URL: string
-  private readonly EXCHANGE: string
+  public channel!: amqp.Channel
+  private connection!: amqp.ChannelModel
 
-  constructor(
-    private readonly config: ConfigService,
-    private readonly logger: Logger,
-  ) {
-    this.RABBITMQ_URL = this.config.get<string>("RABBITMQ_URL")!
-    this.EXCHANGE = this.config.get<string>("RABBITMQ_EXCHANGE")!
-  }
+  constructor(private readonly logger: Logger) {}
 
   async onModuleInit() {
     try {
@@ -45,14 +36,9 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
     this.logger.log("Disconnected from RabbitMQ")
   }
 
-  publish<T>({
-    exchange = this.EXCHANGE,
-    routingKey,
-    options,
-    data,
-  }: IPublish<T>) {
+  publish<T>({ routingKey, options, data }: IPublish<T>) {
     this.channel.publish(
-      exchange,
+      config.NOTIFICATION_EXCHANGE,
       routingKey,
       Buffer.from(JSON.stringify(data)),
       { ...options, persistent: true },
@@ -60,9 +46,9 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
   }
 
   private async connect() {
-    this.connection = await amqp.connect(this.RABBITMQ_URL)
+    this.connection = await amqp.connect(config.RABBITMQ_CONNECTION_URL)
     this.channel = await this.connection.createChannel()
-    await this.channel.assertExchange(this.EXCHANGE, "direct", {
+    await this.channel.assertExchange(config.NOTIFICATION_EXCHANGE, "topic", {
       durable: true,
     })
   }

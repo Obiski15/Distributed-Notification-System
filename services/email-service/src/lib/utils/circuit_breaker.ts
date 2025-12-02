@@ -12,15 +12,15 @@ const circuit_breaker = <T>(operation: () => Promise<T>, service: string) => {
 
   // Add listeners for circuit state changes
   breaker.on("open", () => {
-    console.log(`Circuit OPEN - ${service} service appears to be down`)
+    console.log(`Circuit OPEN - ${service} appears to be down`)
   })
 
   breaker.on("halfOpen", () => {
-    console.log(`Circuit HALF-OPEN - Testing ${service} service`)
+    console.log(`Circuit HALF-OPEN - Testing ${service}`)
   })
 
   breaker.on("close", () => {
-    console.log(`Circuit CLOSED - ${service} service restored`)
+    console.log(`Circuit CLOSED - ${service} restored`)
   })
 
   return breaker

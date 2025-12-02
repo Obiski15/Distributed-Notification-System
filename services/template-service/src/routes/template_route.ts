@@ -1,271 +1,112 @@
-import AppError from "../lib/utils/AppError.js"
-import { create_template_schema, update_template_schema } from "../schema.js"
+import * as statusCodes from "@shared/constants/status-codes.js"
+import * as sysMsg from "@shared/constants/system-message.js"
+import { type FastifyInstance } from "fastify"
 
-const template_routes = async (fastify: any) => {
+import {
+  create_template,
+  delete_template,
+  find_all_templates,
+  find_template,
+  update_template,
+} from "../models/template.model.js"
+import {
+  create_template_schema,
+  delete_template_schema,
+  template_schema,
+  templates_schema,
+  update_template_schema,
+} from "../schemas/template.schema.js"
+
+const template_routes = (fastify: FastifyInstance) => {
   fastify.get(
     "/",
     {
-      schema: {
-        description: "Get all templates",
-        tags: ["Templates"],
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "number" },
-                    name: { type: "string" },
-                    subject: { type: "string" },
-                    body: { type: "string" },
-                  },
-                },
-              },
-              meta: {
-                type: "object",
-                properties: { total: { type: "number" } },
-              },
-            },
-          },
-        },
-      },
+      schema: templates_schema,
     },
-    async (_request: any, reply: any) => {
-      try {
-        const [templates] = await fastify.mysql.query("SELECT * FROM templates")
-        reply.code(200).send({
-          success: true,
-          data: templates,
-          meta: { total: templates.length },
-        })
-      } catch {
-        throw new AppError("Failed to fetch templates", 500)
-      }
+    async (_request, reply) => {
+      const templates = await find_all_templates(fastify)
+
+      reply.code(statusCodes.OK).send({
+        success: true,
+        message: sysMsg.TEMPLATE_LIST_RETRIEVED,
+        status_code: statusCodes.OK,
+        data: { templates, meta: { total: templates.length } },
+      })
     },
   )
 
-  fastify.post(
+  fastify.post<{ Body: CreateTemplateBody }>(
     "/",
     {
-      schema: {
-        description: "Create a new template",
-        tags: ["Templates"],
-        body: create_template_schema,
-        response: {
-          201: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  name: { type: "string" },
-                  subject: { type: "string" },
-                  body: { type: "string" },
-                },
-              },
-            },
-          },
-        },
-      },
+      schema: create_template_schema,
     },
-    async (request: any, reply: any) => {
-      try {
-        const { name, subject, body } = request.body
-        if (!name || !subject || !body) {
-          return reply.send(new AppError("Missing required fields", 400))
-        }
+    async (request, reply) => {
+      const template = await create_template(fastify, request.body)
 
-        const [template] = await fastify.mysql.query(
-          "INSERT INTO templates (name, subject, body) VALUES (?, ?, ?)",
-          [name, subject, body],
-        )
-
-        reply.code(201).send({
-          success: true,
-          data: { id: template.insertId, name, subject, body },
-        })
-      } catch {
-        throw new AppError("Failed to create template", 500)
-      }
+      reply.code(statusCodes.CREATED).send({
+        success: true,
+        status_code: statusCodes.CREATED,
+        message: sysMsg.TEMPLATE_CREATED,
+        data: template,
+      })
     },
   )
 
-  fastify.get(
+  fastify.get<{ Params: { template_code: string } }>(
     "/:template_code",
     {
-      schema: {
-        description: "Get template by code",
-        tags: ["Templates"],
-        params: {
-          type: "object",
-          required: ["template_code"],
-          properties: { template_code: { type: "string" } },
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  id: { type: "number" },
-                  name: { type: "string" },
-                  subject: { type: "string" },
-                  body: { type: "string" },
-                },
-              },
-            },
-          },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-            },
-          },
-        },
-      },
+      schema: template_schema,
     },
-    async (request: any, reply: any) => {
-      try {
-        const { template_code } = request.params
-        const [[template]] = await fastify.mysql.query(
-          "SELECT * FROM templates WHERE name = ?",
-          [template_code],
-        )
-
-        if (!template)
-          return reply.send(new AppError("Template not found", 404))
-
-        reply.code(200).send({
-          success: true,
-          data: template,
-        })
-      } catch {
-        throw new AppError("Unable to fetch template", 404)
-      }
+    async (request, reply) => {
+      const template = await find_template(
+        fastify,
+        request.params.template_code,
+      )
+      reply.code(statusCodes.OK).send({
+        success: true,
+        status: statusCodes.OK,
+        message: sysMsg.TEMPLATE_RETRIEVED,
+        data: template,
+      })
     },
   )
 
-  fastify.patch(
+  fastify.patch<{
+    Body: Record<string, unknown>
+    Params: { template_code: string }
+  }>(
     "/:template_code",
     {
-      schema: {
-        description: "Update template",
-        tags: ["Templates"],
-        params: {
-          type: "object",
-          required: ["template_code"],
-          properties: { template_code: { type: "string" } },
-        },
-        body: update_template_schema,
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-              data: update_template_schema,
-            },
-          },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-            },
-          },
-        },
-      },
+      schema: update_template_schema,
     },
-    async (request: any, reply: any) => {
-      try {
-        const { template_code } = request.params
-        const fields = request.body
+    async (request, reply) => {
+      const { template_code } = request.params
+      const fields = request.body
 
-        if (!fields || !Object.keys(fields).length) {
-          return reply.send(new AppError("No fields provided for update", 400))
-        }
+      const result = await update_template(fastify, template_code, fields)
 
-        const setClauses = []
-        const values = []
-        for (const [key, value] of Object.entries(fields)) {
-          setClauses.push(`${key} = ?`)
-          values.push(value)
-        }
-
-        const sql = `UPDATE templates SET ${setClauses.join(
-          ", ",
-        )} WHERE name = ?`
-        values.push(template_code)
-
-        const [result] = await fastify.mysql.query(sql, values)
-
-        if (result.affectedRows === 0) {
-          return reply.send(new AppError("Template not found", 404))
-        }
-
-        reply.send({
-          success: true,
-          message: "Template updated successfully",
-          data: fields,
-        })
-      } catch {
-        throw new AppError("Failed to update template", 500)
-      }
+      reply.send({
+        success: true,
+        status: statusCodes.OK,
+        message: sysMsg.TEMPLATE_UPDATED,
+        data: result,
+      })
     },
   )
 
-  fastify.delete(
+  fastify.delete<{ Params: { template_code: string } }>(
     "/:template_code",
     {
-      schema: {
-        description: "Delete template",
-        tags: ["Templates"],
-        params: {
-          type: "object",
-          required: ["template_code"],
-          properties: { template_code: { type: "string" } },
-        },
-        response: {
-          204: { type: "null" },
-          404: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-            },
-          },
-        },
-      },
+      schema: delete_template_schema,
     },
-    async (request: any, reply: any) => {
-      try {
-        const { template_code } = request.params
+    async (request, reply) => {
+      await delete_template(fastify, request.params.template_code)
 
-        const [[template]] = await fastify.mysql.query(
-          "SELECT * FROM templates WHERE name = ?",
-          [template_code],
-        )
-
-        if (!template) {
-          return reply.send(new AppError("Template not found", 404))
-        }
-
-        await fastify.mysql.query("DELETE FROM templates WHERE name = ?", [
-          template_code,
-        ])
-        reply.code(204).send()
-      } catch {
-        throw new AppError("Failed to delete template", 500)
-      }
+      reply.code(statusCodes.OK).send({
+        success: true,
+        status_code: statusCodes.OK,
+        message: sysMsg.TEMPLATE_DELETED,
+      })
     },
   )
 }

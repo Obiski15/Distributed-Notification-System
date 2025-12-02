@@ -1,17 +1,15 @@
 import { HttpService } from "@nestjs/axios"
 import { HttpStatus } from "@nestjs/common"
-import { ConfigService } from "@nestjs/config"
+import { config } from "@shared/config/index"
 import { AxiosResponse } from "axios"
 import { firstValueFrom } from "rxjs"
 import { Breaker } from "./breaker"
 
 export class Discover {
   private httpService: HttpService
-  private config: ConfigService
 
   constructor() {
     this.httpService = new HttpService()
-    this.config = new ConfigService()
   }
 
   async discover(name: string): Promise<Service> {
@@ -19,7 +17,7 @@ export class Discover {
       () =>
         firstValueFrom(
           this.httpService.request({
-            url: `http://${this.config.get("CONSUL_HOST")}:${this.config.get("CONSUL_PORT")}/v1/catalog/service/${name}`,
+            url: `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/catalog/service/${name}`,
           }),
         ),
       "Consul",
