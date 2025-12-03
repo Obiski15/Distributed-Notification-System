@@ -1,6 +1,13 @@
 import "./load-env"
 
+const isDev = process.env.NODE_ENV === "development"
+const isProd = process.env.NODE_ENV === "production"
+
 export const config = {
+  // ENVIRONMENT
+  isDev,
+  isProd,
+
   // SERVICES
   TEMPLATE_SERVICE: "template-service",
   GATEWAY_SERVICE: "gateway-service",
@@ -55,4 +62,19 @@ export const config = {
   SMTP_PASS: process.env.SMTP_PASS!,
   SMTP_PORT: process.env.SMTP_PORT!,
   SMTP_HOST: process.env.SMTP_HOST!,
+
+  // BREAKER OPTIONS
+  BREAKER_OPTIONS: isDev
+    ? {
+        timeout: 30000,
+        resetTimeout: 1000,
+        errorThresholdPercentage: 50,
+        volumeThreshold: 1,
+      }
+    : {
+        timeout: 3000,
+        resetTimeout: 30000,
+        errorThresholdPercentage: 20,
+        volumeThreshold: 10,
+      },
 }

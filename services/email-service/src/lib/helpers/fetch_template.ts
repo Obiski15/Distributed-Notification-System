@@ -1,8 +1,9 @@
 import { config } from "@shared/config/index.js"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import AppError from "@shared/utils/AppError.js"
+import circuit_breaker from "@shared/utils/circuit_breaker.js"
 import axios, { AxiosError } from "axios"
-import circuit_breaker from "../utils/circuit_breaker.js"
+
 import discover_service from "../utils/discover_service.js"
 interface Template {
   body: string
