@@ -3,6 +3,7 @@ import {
   IsArray,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
@@ -24,12 +25,15 @@ export class UserDataDto {
 
 export class CreateNotificationDto {
   @IsEnum(NotificationType)
+  @IsNotEmpty()
   notification_type: NotificationType
 
   @IsUUID()
+  @IsNotEmpty()
   user: string
 
   @IsString()
+  @IsNotEmpty()
   template_code: string
 
   @ValidateNested()
@@ -37,6 +41,7 @@ export class CreateNotificationDto {
   variables: UserDataDto
 
   @IsString()
+  @IsNotEmpty()
   request_id: string
 
   @IsOptional()

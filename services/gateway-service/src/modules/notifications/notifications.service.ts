@@ -1,14 +1,10 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from "@nestjs/common"
+import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
 
 import { RabbitMQProvider } from "../../providers/rabbitmq.provider"
 
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager"
+import { UserService } from "../user/user.service"
 import { UpdateNotificationStatusDto } from "./dto/notification-status.dto"
 import { CreateNotificationDto, NotificationType } from "./dto/notification.dto"
 
@@ -18,11 +14,21 @@ export interface NotificationResponse {
   data: Record<string, unknown>
 }
 
+export enum NotificationStatus {
+  PENDING = "pending",
+  DELIVERED = "delivered",
+  FAILED = "failed",
+}
+
 @Injectable()
 export class NotificationsService {
+  CACHE_TTL_MS = 24 * 60 * 60 * 1000
+
   constructor(
     @Inject(CACHE_MANAGER) private cache: Cache,
     private readonly rabbitmq: RabbitMQProvider,
+    private readonly userService: UserService,
+    private readonly logger: Logger,
   ) {}
 
   async handleNotification(payload: CreateNotificationDto) {
@@ -30,14 +36,13 @@ export class NotificationsService {
       notification_type,
       template_code,
       variables,
+      user: user_id,
       request_id,
       priority,
     } = payload
 
-    if (!request_id) throw new BadRequestException("request_id is required")
-
     // find user
-    const user: Record<string, unknown> = {}
+    const user = await this.userService.get_user(user_id)
 
     const prefKey =
       notification_type === NotificationType.EMAIL
@@ -49,40 +54,52 @@ export class NotificationsService {
     ) {
       return {
         success: true,
-        message: `${notification_type} notifications disabled by user`,
+        message: `${notification_type} ${SYSTEM_MESSAGES.NOTIFICATIONS_DISABLED}`,
         data: { request_id, notification_type, priority },
       }
     }
 
-    const key = `notification:${request_id}`
-    const existing: { status: string } | null =
-      (await this.cache.get(key)) || null
+    const key = this.notification_key(request_id)
+    const existing =
+      ((await this.cache.get(key)) as Record<string, unknown> | null) || null
+
+    const activeStatuses = Object.values(NotificationStatus).filter(
+      status => status !== NotificationStatus.FAILED,
+    )
 
     if (existing) {
-      if (["pending", "delivered"].includes(existing.status)) {
+      if (
+        activeStatuses.includes(
+          existing.status as Exclude<
+            NotificationStatus,
+            NotificationStatus.FAILED
+          >,
+        )
+      ) {
         return {
           success: true,
-          message: "Notification already processed",
-          data: { request_id, notification_type, priority },
-          meta: null,
+          message: SYSTEM_MESSAGES.NOTIFICATION_ALREADY_PROCESSED,
+          data: existing,
         }
       }
-      if (existing.status === "failed") {
+      if (existing.status === NotificationStatus.FAILED) {
         return {
           success: true,
-          message: "Notification previously failed",
-          data: { request_id, notification_type, priority },
-          meta: null,
+          message: SYSTEM_MESSAGES.NOTIFICATION_PREVIOUSLY_FAILED,
+          data: existing,
         }
       }
     } else {
       await this.cache.set(
         key,
         {
-          status: "pending",
+          request_id,
+          status: NotificationStatus.PENDING,
+          notification_type,
+          priority,
           timestamp: new Date().toISOString(),
         },
-        60 * 60 * 24,
+        this.CACHE_TTL_MS,
       )
     }
 
@@ -93,7 +110,6 @@ export class NotificationsService {
           notification_type,
           email: user.email,
           user_id: user?.id,
-          notification_id: key,
           template_code,
           variables,
           push_tokens: user?.push_tokens,
@@ -105,11 +121,16 @@ export class NotificationsService {
 
       return {
         success: true,
-        message: `${notification_type} notification queued successfully`,
+        message: `${notification_type} ${SYSTEM_MESSAGES.NOTIFICATION_QUEUED}`,
         data: { request_id, notification_type, priority },
       }
-    } catch {
-      throw new InternalServerErrorException("Failed to queue email request")
+    } catch (error) {
+      this.logger.error(error)
+      return {
+        success: false,
+        message: SYSTEM_MESSAGES.QUEUE_PUBLISH_FAILED,
+        data: { request_id, notification_type, priority },
+      }
     }
   }
 
@@ -117,33 +138,42 @@ export class NotificationsService {
     notification_type: string,
     body: UpdateNotificationStatusDto,
   ): Promise<NotificationResponse> {
-    const { notification_id, status, timestamp, error } = body
+    const { request_id, status, timestamp, error } = body
+    const key = this.notification_key(request_id)
+    const existing =
+      ((await this.cache.get(key)) as Record<string, unknown> | null) || {}
 
-    const key = `notification:${notification_id}`
     const record = {
+      ...existing,
       status,
       error: error || null,
       timestamp: timestamp || new Date().toISOString(),
     }
 
-    await this.cache.set(key, JSON.stringify(record), 60 * 60 * 24)
+    await this.cache.set(key, record, this.CACHE_TTL_MS)
 
     return {
       success: true,
-      message: `${notification_type} notification status updated`,
-      data: { notification_id, status, error },
+      message: `${notification_type} ${SYSTEM_MESSAGES.NOTIFICATION_STATUS_UPDATED}`,
+      data: { key, status, error },
     }
   }
 
   async getStatus(request_id: string): Promise<NotificationResponse> {
-    const key = `notification:${request_id}`
+    const key = this.notification_key(request_id)
+
     const data = (await this.cache.get(key)) as Record<string, unknown>
-    if (!data) throw new NotFoundException("Not found")
+    if (!data)
+      throw new NotFoundException(SYSTEM_MESSAGES.NOTIFICATION_NOT_FOUND)
 
     return {
       success: true,
-      message: "ok",
+      message: SYSTEM_MESSAGES.NOTIFICATION_RETRIEVED,
       data,
     }
+  }
+
+  private notification_key = (id: string) => {
+    return `notification:${id}`
   }
 }

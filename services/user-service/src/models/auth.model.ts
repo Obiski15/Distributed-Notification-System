@@ -141,19 +141,14 @@ export class AuthModel extends BaseModel {
       email: user.email,
       name: user.name,
     }
+
     return this.fastify.jwt.access.sign(payload)
   }
 
   generateTokens(user: UserWithoutPassword) {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-    }
-
     return {
-      access_token: this.generate_access_token(payload),
-      refresh_token: this.generate_refresh_token(payload),
+      access_token: this.generate_access_token(user),
+      refresh_token: this.generate_refresh_token(user),
     }
   }
 }

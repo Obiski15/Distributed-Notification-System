@@ -6,18 +6,14 @@ import { config } from "@shared/config/index.js"
 import { fetch_template } from "../lib/helpers/fetch_template.js"
 import update_notification_status from "../lib/helpers/update_notification_status.js"
 
-// --- TYPES ---
-
-// 1. Define the exact shape of the message coming from RabbitMQ
 interface EmailQueueMessage {
   template_code: string
   email: string
-  notification_id?: string // Optional because not all system emails might be tracked in DB
-  variables?: Record<string, string> // Key-value pairs for Mustache
+  request_id: string
+  variables: Record<string, string>
   priority?: number
 }
 
-// --- CONSTANTS ---
 const EXCHANGE_NAME = config.NOTIFICATION_EXCHANGE
 const RETRY_DELAY_MS = config.NOTIFICATION_RETRY_DELAY
 const MAX_RETRIES = config.NOTIFICATION_MAX_RETRIES
@@ -102,8 +98,7 @@ export const consume_queue = async (
         try {
           parsedData = JSON.parse(msg.content.toString()) as EmailQueueMessage
 
-          const { template_code, email, notification_id, variables } =
-            parsedData
+          const { template_code, email, request_id, variables } = parsedData
 
           if (!email || !template_code) {
             console.error(
@@ -132,26 +127,28 @@ export const consume_queue = async (
             html,
           })
 
-          if (notification_id) {
-            await update_notification_status({
-              status: "delivered",
-              notification_id,
-            })
-          }
+          await update_notification_status({
+            status: "delivered",
+            request_id,
+          })
 
           ch.ack(msg)
           console.log(`✅ Email sent successfully to ${email}`)
-        } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error"
-          console.error("❌ Error processing email:", errorMessage)
+        } catch (error) {
+          console.error("❌ Error processing email:", error)
 
           // RETRY LOGIC
           if (error instanceof SyntaxError) {
             console.error("Fatal JSON error. Sending to DLQ.")
-            ch.nack(msg, false, false)
             return
           }
+
+          // Check if service is down
+          if (
+            String(error).toString().includes(config.GATEWAY_SERVICE) ||
+            String(error).toString().includes(config.TEMPLATE_SERVICE)
+          )
+            return ch.nack(msg, false, false)
 
           const headers = msg.properties.headers || {}
           const retryCount = (headers["x-retry-count"] || 0) as number
@@ -173,11 +170,11 @@ export const consume_queue = async (
             console.error(`💀 Max retries reached. Sending to Dead Letter.`)
 
             // Update DB status if we have the ID from the partial parse
-            if (parsedData?.notification_id) {
+            if (parsedData?.request_id) {
               await update_notification_status({
                 status: "failed",
-                notification_id: parsedData.notification_id,
-                error: errorMessage,
+                request_id: parsedData.request_id,
+                error: (error as Error)?.message ?? "Unknown error",
               }).catch((e: unknown) =>
                 console.error("Failed to update status DB:", e),
               )

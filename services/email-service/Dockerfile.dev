@@ -9,9 +9,7 @@ WORKDIR /app
 
 # Dependency Installation 
 
-COPY pnpm-workspace.yaml ./
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json tsconfig.base.json pnpm-lock.yaml ./
 COPY services/email-service/package.json ./services/email-service/
 COPY shared/package.json ./shared/
 

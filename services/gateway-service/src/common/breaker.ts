@@ -4,7 +4,7 @@ import CircuitBreaker from "opossum"
 const options = {
   failureThreshold: 50, // Open after 50% of requests fail
   resetTimeout: 10000, // Try again after 10 seconds
-  timeout: 8080, // Time before request is considered failed
+  timeout: 20000, // Time before request is considered failed
   errorThresholdPercentage: 50, // Error percentage to open circuit,
 }
 

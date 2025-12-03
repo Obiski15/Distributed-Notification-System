@@ -4,7 +4,7 @@ import { FastifyRequest } from "fastify"
 
 import { Discover } from "../../common/discover"
 import { Fetch } from "../../common/fetch"
-import { Public } from "./decorators/public.decorator"
+import { Public } from "../../decorators/public.decorator"
 
 @Controller()
 export class AuthController implements OnModuleInit {

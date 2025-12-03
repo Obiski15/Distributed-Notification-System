@@ -34,6 +34,8 @@ export class GlobalFilter implements ExceptionFilter {
       status_code = (exception.response?.data as IError).status_code
     }
 
+    console.log(exception)
+
     const errorResponse = {
       status,
       message,
@@ -41,7 +43,7 @@ export class GlobalFilter implements ExceptionFilter {
       stack,
     }
 
-    this.logger.error(errorResponse)
+    this.logger.log(errorResponse)
 
     reply.status(status_code).send(errorResponse)
   }

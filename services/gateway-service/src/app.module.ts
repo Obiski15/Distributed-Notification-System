@@ -13,7 +13,7 @@ import { AuthGuard } from "./modules/auth/guards/auth.guard"
 import { NotificationsModule } from "./modules/notifications/notifications.module"
 import { SharedModule } from "./modules/shared.module"
 import { TemplateController } from "./modules/template/template.controller"
-import { UserController } from "./modules/user/user.controller"
+import { UserModule } from "./modules/user/user.module"
 
 @Module({
   imports: [
@@ -33,10 +33,11 @@ import { UserController } from "./modules/user/user.controller"
       }),
       isGlobal: true,
     }),
+    UserModule,
     NotificationsModule,
     SharedModule,
   ],
-  controllers: [UserController, AuthController, TemplateController],
+  controllers: [AuthController, TemplateController],
   providers: [
     {
       provide: APP_FILTER,

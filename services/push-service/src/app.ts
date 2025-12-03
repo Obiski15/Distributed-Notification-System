@@ -6,7 +6,7 @@ import health_schema from "@shared/schemas/health-schema.js"
 import error_handler from "@shared/utils/error_handler.js"
 import Fastify, { FastifyReply, FastifyRequest } from "fastify"
 
-const app = Fastify({ logger: true })
+const app = Fastify({ logger: false })
 
 // Register Swagger
 await app.register(swagger, {

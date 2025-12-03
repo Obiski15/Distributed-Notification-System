@@ -7,14 +7,14 @@ import circuit_breaker from "../utils/circuit_breaker.js"
 import discover_service from "../utils/discover_service.js"
 
 interface NotificationOptions {
-  notification_id: string
+  request_id: string
   status: "delivered" | "failed"
   error?: any
 }
 
 const update_notification_status = async ({
   status,
-  notification_id,
+  request_id,
   error = null,
 }: NotificationOptions) => {
   const breaker = circuit_breaker(
@@ -28,13 +28,14 @@ const update_notification_status = async ({
         await axios.post<{ data: any }>(
           url,
           {
-            notification_id,
+            request_id,
             status,
             timestamp: new Date().toISOString(),
             error,
           },
           {
             headers: {
+              "x-internal-secret": config.INTERNAL_SERVICE_SECRET,
               "Content-Type": "application/json",
             },
           },

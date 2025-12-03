@@ -1,4 +1,4 @@
-import { IsEnum, IsString, IsOptional, IsDateString } from "class-validator"
+import { IsDateString, IsEnum, IsOptional, IsString } from "class-validator"
 
 export enum NotificationStatus {
   DELIVERED = "delivered",
@@ -8,7 +8,7 @@ export enum NotificationStatus {
 
 export class UpdateNotificationStatusDto {
   @IsString()
-  notification_id: string
+  request_id: string
 
   @IsEnum(NotificationStatus)
   status: NotificationStatus

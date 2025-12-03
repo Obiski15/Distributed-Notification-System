@@ -38,3 +38,14 @@ export const NO_VALID_UPDATE_FIELDS =
   "No valid fields provided. Only 'name' and 'email' can be updated."
 export const PUSH_TOKEN_UPDATED = "User push tokens updated successfully."
 export const PUSH_TOKEN_ALREADY_EXISTS = "Push token already exists."
+
+// NOTIFICATIONS
+export const REQUEST_ID_REQUIRED = "request_id is required."
+export const NOTIFICATIONS_DISABLED = "notifications disabled by user."
+export const NOTIFICATION_ALREADY_PROCESSED = "Notification already processed."
+export const NOTIFICATION_PREVIOUSLY_FAILED = "Notification previously failed."
+export const NOTIFICATION_QUEUED = "notification queued successfully."
+export const NOTIFICATION_STATUS_UPDATED = "notification status updated."
+export const QUEUE_PUBLISH_FAILED = "Failed to queue notification request."
+export const NOTIFICATION_RETRIEVED = "Notification retrieved successfully"
+export const NOTIFICATION_NOT_FOUND = "Notification with that id not found"

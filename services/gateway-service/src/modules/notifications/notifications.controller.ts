@@ -7,6 +7,7 @@ import {
   Param,
   Post,
 } from "@nestjs/common"
+import { AllowInternal } from "../../decorators/isInternal.decorator"
 import { UpdateNotificationStatusDto } from "./dto/notification-status.dto"
 import { CreateNotificationDto } from "./dto/notification.dto"
 import {
@@ -15,6 +16,7 @@ import {
 } from "./notifications.service"
 
 @Controller("notifications")
+@AllowInternal()
 export class NotificationsController {
   constructor(private readonly notificationService: NotificationsService) {}
 
