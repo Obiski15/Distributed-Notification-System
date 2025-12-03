@@ -2,11 +2,11 @@ import { HttpService } from "@nestjs/axios"
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager"
 import { Inject, Injectable, OnModuleInit } from "@nestjs/common"
 import { config } from "@shared/config/index"
+import type { Service } from "@shared/types/index"
+import circuit_breaker from "@shared/utils/circuit_breaker"
+import discover_service from "@shared/utils/discover_service"
 import { AxiosResponse } from "axios"
 import { firstValueFrom } from "rxjs"
-import { Breaker } from "../../common/breaker"
-import { Discover } from "../../common/discover"
-
 @Injectable()
 export class UserService implements OnModuleInit {
   private service: Service
@@ -17,7 +17,7 @@ export class UserService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    this.service = await new Discover().discover(config.USER_SERVICE)
+    this.service = await discover_service(config.USER_SERVICE)
   }
 
   async get_user(id: string) {
@@ -33,7 +33,7 @@ export class UserService implements OnModuleInit {
       this.service.ServiceAddress || this.service.Address
     }:${this.service.ServicePort}/api/v1/users`
 
-    const res = await new Breaker<AxiosResponse<{ data: IUser }>>(
+    const res = await circuit_breaker<AxiosResponse<{ data: IUser }>>(
       () =>
         firstValueFrom(
           this.httpService.request({

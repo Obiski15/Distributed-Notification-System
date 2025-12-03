@@ -1,12 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import * as STATUS_CODES from "../constants/status-codes"
 import * as SYSTEM_MESSAGES from "../constants/system-message"
-
-interface IError extends Error {
-  status_code?: number
-  is_operational?: boolean
-  validation?: any
-}
+import type { IError } from "../types"
 
 const errorHandler = (
   error: unknown,

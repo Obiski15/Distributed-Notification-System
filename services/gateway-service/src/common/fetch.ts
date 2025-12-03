@@ -1,9 +1,10 @@
 import { HttpService } from "@nestjs/axios"
 import { Injectable } from "@nestjs/common"
+import type { Service } from "@shared/types/index"
+import circuit_breaker from "@shared/utils/circuit_breaker"
 import { AxiosResponse } from "axios"
 import { FastifyRequest } from "fastify"
 import { firstValueFrom } from "rxjs"
-import { Breaker } from "./breaker"
 
 @Injectable()
 export class Fetch {
@@ -22,7 +23,7 @@ export class Fetch {
       this.service.ServiceAddress || this.service.Address
     }:${this.service.ServicePort}${this.request.url}`
 
-    const res = await new Breaker<AxiosResponse>(
+    const res = await circuit_breaker<AxiosResponse>(
       () =>
         firstValueFrom(
           this.httpService.request({

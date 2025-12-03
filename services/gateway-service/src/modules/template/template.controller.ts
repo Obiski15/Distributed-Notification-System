@@ -1,8 +1,9 @@
 import { All, Controller, Req } from "@nestjs/common"
 import { config } from "@shared/config/index"
+import type { Service } from "@shared/types/index"
+import discover_service from "@shared/utils/discover_service"
 import { FastifyRequest } from "fastify"
 
-import { Discover } from "../../common/discover"
 import { Fetch } from "../../common/fetch"
 
 @Controller()
@@ -10,7 +11,7 @@ export class TemplateController {
   private service: Service
 
   async onModuleInit() {
-    this.service = await new Discover().discover(config.TEMPLATE_SERVICE)
+    this.service = await discover_service(config.TEMPLATE_SERVICE)
   }
 
   @All("templates*")

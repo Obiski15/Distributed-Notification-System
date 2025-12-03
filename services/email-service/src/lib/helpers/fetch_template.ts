@@ -4,7 +4,7 @@ import AppError from "@shared/utils/AppError.js"
 import circuit_breaker from "@shared/utils/circuit_breaker.js"
 import axios, { AxiosError } from "axios"
 
-import discover_service from "../utils/discover_service.js"
+import discover_service from "@shared/utils/discover_service.js"
 interface Template {
   body: string
   subject: string
