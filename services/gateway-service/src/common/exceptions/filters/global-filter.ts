@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Logger,
 } from "@nestjs/common"
+import type { IError } from "@shared/types"
 import { AxiosError } from "axios"
 import { FastifyReply } from "fastify"
 import { CustomException } from "../custom/custom-exceptions"

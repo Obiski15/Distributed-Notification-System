@@ -1,9 +1,10 @@
 import { All, Controller, Inject, OnModuleInit, Req } from "@nestjs/common"
 import { config } from "@shared/config/index"
+import type { Service } from "@shared/types/index"
 import { FastifyRequest } from "fastify"
 
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager"
-import { Discover } from "../../common/discover"
+import discover_service from "@shared/utils/discover_service"
 import { Fetch } from "../../common/fetch"
 
 interface AuthenticatedRequest extends FastifyRequest {
@@ -16,7 +17,7 @@ export class UserController implements OnModuleInit {
   constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
   async onModuleInit() {
-    this.service = await new Discover().discover(config.USER_SERVICE)
+    this.service = await discover_service(config.USER_SERVICE)
   }
 
   @All("users*")
