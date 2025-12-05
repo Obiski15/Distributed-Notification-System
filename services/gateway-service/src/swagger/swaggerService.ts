@@ -1,10 +1,11 @@
 // import { HttpService } from "@nestjs/axios"
-// import { INestApplication, Injectable, Logger } from "@nestjs/common"
+// import { INestApplication, Injectable } from "@nestjs/common"
 // import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 // import { FastifyInstance } from "fastify"
 // import merge from "lodash.merge"
 // import * as CircuitBreaker from "opossum"
 // import { lastValueFrom } from "rxjs"
+// import logger from "@shared/utils/logger"
 
 // interface MicroserviceSpec {
 //   name: string
@@ -13,7 +14,6 @@
 
 // @Injectable()
 // export class SwaggerGateway {
-//   private readonly logger = new Logger(SwaggerGateway.name)
 //   private cachedSpec: any = null
 //   private lastFetched: number = 0
 //   private cacheTtl = 60 * 1000 // 1 minute cache
@@ -33,13 +33,13 @@
 //     this.breaker = new CircuitBreaker(this.fetchSwaggerDoc.bind(this), options)
 
 //     this.breaker.on("open", () =>
-//       this.logger.warn("⚠️ Swagger circuit breaker OPENED (services failing)"),
+//       logger.warn("⚠️ Swagger circuit breaker OPENED (services failing)"),
 //     )
 //     this.breaker.on("halfOpen", () =>
-//       this.logger.log("🟡 Swagger circuit breaker HALF-OPEN (retrying...)"),
+//       logger.log("🟡 Swagger circuit breaker HALF-OPEN (retrying...)"),
 //     )
 //     this.breaker.on("close", () =>
-//       this.logger.log("✅ Swagger circuit breaker CLOSED (recovered)"),
+//       logger.log("✅ Swagger circuit breaker CLOSED (recovered)"),
 //     )
 //   }
 
@@ -69,7 +69,7 @@
 //           try {
 //             const serviceUrl = await this.consulService.getServiceAddress(name)
 //             if (!serviceUrl) {
-//               this.logger.warn(`⚠️ ${name} not found in Consul`)
+//               logger.warn(`⚠️ ${name} not found in Consul`)
 //               continue
 //             }
 
@@ -78,7 +78,7 @@
 
 //             MICROSERVICES.push({ name, url: `${serviceUrl}${path}` })
 //           } catch (err) {
-//             this.logger.warn(`Failed to resolve ${name}: ${err.message}`)
+//             logger.warn(`Failed to resolve ${name}: ${err.message}`)
 //           }
 //         }
 
@@ -88,7 +88,7 @@
 //             try {
 //               return await this.breaker.fire(svc.url)
 //             } catch (err) {
-//               this.logger.warn(
+//               logger.warn(
 //                 `❌ Circuit breaker skip: ${svc.name} (${err.message})`,
 //               )
 //               return {} // skip this one
@@ -114,7 +114,7 @@
 
 //         reply.send(mergedSpec)
 //       } catch (err) {
-//         this.logger.error("💥 Failed to merge Swagger specs", err)
+//         logger.error("💥 Failed to merge Swagger specs", err)
 //         reply.status(500).send({ error: "Failed to merge Swagger specs" })
 //       }
 //     })

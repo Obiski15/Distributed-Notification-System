@@ -1,23 +1,17 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from "@nestjs/common"
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { config } from "@shared/config/index"
 
+import logger from "@shared/utils/logger"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
 @Injectable()
 export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
   private service_id = `${config.GATEWAY_SERVICE}-${config.GATEWAY_SERVICE_PORT}`
 
-  constructor(private readonly logger: Logger) {}
-
   async onModuleInit() {
     try {
       await this.registerService()
-      this.logger.log(
+      logger.info(
         `✅ [${config.GATEWAY_SERVICE}] Registered with Consul at ${config.CONSUL_HOST}:${config.CONSUL_PORT}`,
       )
     } catch {
@@ -27,7 +21,7 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.deregisterService()
-    this.logger.log(`[${config.GATEWAY_SERVICE}] Deregistered from Consul`)
+    logger.info(`[${config.GATEWAY_SERVICE}] Deregistered from Consul`)
   }
 
   public async registerService() {

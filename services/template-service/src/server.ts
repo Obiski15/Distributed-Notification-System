@@ -1,4 +1,5 @@
 import { config } from "@shared/config/index.js"
+import logger from "@shared/utils/logger.js"
 import app from "./app.js"
 
 // register consul for dynamic service discovery
@@ -23,7 +24,7 @@ async function registerService() {
     },
   )
 
-  console.log(
+  logger.info(
     `[${config.TEMPLATE_SERVICE}] Registered with Consul at ${config.TEMPLATE_SERVICE}:${config.TEMPLATE_SERVICE_PORT}`,
   )
 }
@@ -37,15 +38,15 @@ async function deregisterService() {
       `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
       { method: "PUT" },
     )
-    console.log(`[${config.TEMPLATE_SERVICE}] Deregistered from Consul`)
+    logger.info(`[${config.TEMPLATE_SERVICE}] Deregistered from Consul`)
   } catch (err) {
-    console.error("Failed to deregister from Consul:", err)
+    logger.error(`Failed to deregister from Consul: ${err as Error}`)
   }
 }
 
 // Handle graceful shutdown
 const gracefulShutdown = async (signal: string) => {
-  console.log(`\n🛑 Received ${signal}, shutting down gracefully...`)
+  logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
   await deregisterService()
   await app.close()
@@ -61,15 +62,15 @@ const start = async () => {
     await app.ready()
 
     await app.listen({ port: config.TEMPLATE_SERVICE_PORT, host: config.HOST })
-    console.log(
+    logger.info(
       `Template service listening on port ${config.TEMPLATE_SERVICE_PORT}`,
     )
 
     await registerService()
   } catch (err) {
-    app.log.error(err)
+    logger.error(err)
     process.exit(1)
   }
 }
 
-start()
+void start()

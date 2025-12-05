@@ -1,5 +1,6 @@
 import { config } from "@shared/config/index.js"
 import admin from "firebase-admin"
+import logger from "@shared/utils/logger.js"
 
 // Initialize Firebase Admin SDK
 let firebaseApp: admin.app.App | null = null
@@ -90,7 +91,7 @@ async function send_push_notification(payload: PushNotificationPayload) {
     } else if (typeof error === "string") {
       errorMessage = error
     }
-    console.error("FCM send error:", errorMessage ?? error)
+    logger.error(`FCM send error: ${errorMessage ?? (error as Error)}`)
   }
 }
 
@@ -113,7 +114,7 @@ async function validate_device_token(token: string): Promise<boolean> {
 
     return true
   } catch (error) {
-    console.error("Token validation error:", error)
+    logger.error(`Token validation error: ${error as Error}`)
     return false
   }
 }

@@ -5,6 +5,7 @@ import {
 } from "../utils/send_push.js"
 
 import { config } from "@shared/config/index.js"
+import logger from "@shared/utils/logger.js"
 
 let connection: amqplib.ChannelModel | null = null
 let channel: amqplib.Channel | null = null
@@ -16,13 +17,13 @@ export const get_channel = async (): Promise<amqplib.Channel> => {
     connection = await amqplib.connect(config.RABBITMQ_CONNECTION_URL)
 
     connection.on("error", (err: Error) => {
-      console.error("RabbitMQ connection error:", err)
+      logger.error(`RabbitMQ connection error: ${err}`)
       connection = null
       channel = null
     })
 
     connection.on("close", () => {
-      console.warn("RabbitMQ connection closed")
+      logger.warn("RabbitMQ connection closed")
       connection = null
       channel = null
     })
@@ -31,7 +32,7 @@ export const get_channel = async (): Promise<amqplib.Channel> => {
 
     return channel
   } catch (error) {
-    console.error("Failed to connect to RabbitMQ", error)
+    logger.error(`Failed to connect to RabbitMQ: ${error as Error}`)
     throw error
   }
 }
@@ -78,7 +79,7 @@ export const consume_queue = async (
     failedKey,
   )
 
-  console.log(`🐰 Waiting for messages in ${mainKey}.queue`)
+  logger.info(`🐰 Waiting for messages in ${mainKey}.queue`)
 
   // Limit unacknowledged messages to 10
   await ch.prefetch(10)
@@ -101,7 +102,7 @@ export const consume_queue = async (
             !Array.isArray(data.push_tokens) ||
             data.push_tokens.length === 0
           ) {
-            console.error("❌ Malformed message: No push tokens")
+            logger.error("❌ Malformed message: No push tokens")
             ch.nack(msg, false, false)
             return
           }
@@ -110,7 +111,7 @@ export const consume_queue = async (
             const isValidToken = await validate_device_token(token)
 
             if (!isValidToken) {
-              console.error(`Skipping invalid device token: ${token}`)
+              logger.error(`Skipping invalid device token: ${token}`)
               return null
             }
 
@@ -133,7 +134,9 @@ export const consume_queue = async (
               await callback(pushPayload)
               return token
             } catch (err) {
-              console.error(`❌ Failed to send to token ${token}:`, err)
+              logger.error(
+                `❌ Failed to send to token ${token}: ${err as Error}`,
+              )
               return null
             }
           })
@@ -141,12 +144,12 @@ export const consume_queue = async (
           await Promise.all(valid_promises)
 
           ch.ack(msg)
-          console.log(
+          logger.info(
             `✅ Batch processed for ${data.push_tokens.length} tokens`,
           )
         } catch (error) {
           if (error instanceof SyntaxError) {
-            console.error(
+            logger.error(
               "❌ Fatal JSON Parse Error. Sending to DLQ immediately.",
             )
             ch.nack(msg, false, false)
@@ -157,7 +160,7 @@ export const consume_queue = async (
           const retryCount = (headers["x-retry-count"] || 0) as number
 
           if (retryCount < config.NOTIFICATION_MAX_RETRIES) {
-            console.warn(
+            logger.warn(
               `⚠️ Retrying (${retryCount + 1}/${config.NOTIFICATION_MAX_RETRIES})...`,
             )
 
@@ -169,7 +172,7 @@ export const consume_queue = async (
             // Ack the original (we made a copy in the wait queue)
             ch.ack(msg)
           } else {
-            console.error(error, `💀 Max retries. Sending to Dead Letter.`)
+            logger.error(error, `💀 Max retries. Sending to Dead Letter.`)
             ch.nack(msg, false, false)
           }
         }

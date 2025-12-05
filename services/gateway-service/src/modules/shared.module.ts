@@ -1,5 +1,5 @@
 import { HttpModule } from "@nestjs/axios"
-import { Global, Logger, Module } from "@nestjs/common"
+import { Global, Module } from "@nestjs/common"
 import { ConsulProvider } from "../providers/consul.provider"
 
 @Global()
@@ -11,7 +11,7 @@ import { ConsulProvider } from "../providers/consul.provider"
     }),
   ],
 
-  providers: [ConsulProvider, Logger],
-  exports: [ConsulProvider, Logger, HttpModule],
+  providers: [ConsulProvider],
+  exports: [ConsulProvider, HttpModule],
 })
 export class SharedModule {}

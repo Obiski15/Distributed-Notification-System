@@ -1,3 +1,4 @@
+import logger from "@shared/utils/logger.js"
 import amqplib, { ConsumeMessage } from "amqplib"
 import mustache from "mustache"
 import type { SendMailOptions } from "nodemailer"
@@ -28,13 +29,13 @@ export const get_channel = async (): Promise<amqplib.Channel> => {
     connection = await amqplib.connect(config.RABBITMQ_CONNECTION_URL)
 
     connection.on("error", (err: Error) => {
-      console.error("RabbitMQ connection error:", err)
+      logger.error(`RabbitMQ connection error: ${err}`)
       connection = null
       channel = null
     })
 
     connection.on("close", () => {
-      console.warn("RabbitMQ connection closed")
+      logger.warn("RabbitMQ connection closed")
       connection = null
       channel = null
     })
@@ -43,7 +44,7 @@ export const get_channel = async (): Promise<amqplib.Channel> => {
 
     return channel
   } catch (error) {
-    console.error("Failed to connect to RabbitMQ", error)
+    logger.error(`Failed to connect to RabbitMQ: ${error as Error}`)
     throw error
   }
 }
@@ -84,7 +85,7 @@ export const consume_queue = async (
   await ch.assertQueue(`${mainKey}.failed`, { durable: true })
   await ch.bindQueue(`${mainKey}.failed`, EXCHANGE_NAME, failedKey)
 
-  console.log(`🐰 Waiting for messages in ${mainKey}.queue`)
+  logger.info(`🐰 Waiting for messages in ${mainKey}.queue`)
 
   //  Limit unacknowledged messages to 10
   await ch.prefetch(10)
@@ -101,14 +102,12 @@ export const consume_queue = async (
           const { template_code, email, request_id, variables } = parsedData
 
           if (!email || !template_code) {
-            console.error(
-              "❌ Malformed message: Missing email or template_code",
-            )
+            logger.error("❌ Malformed message: Missing email or template_code")
             ch.nack(msg, false, false)
             return
           }
 
-          console.log(
+          logger.info(
             `📨 Processing email for ${email} (Template: ${template_code})`,
           )
 
@@ -133,13 +132,13 @@ export const consume_queue = async (
           })
 
           ch.ack(msg)
-          console.log(`✅ Email sent successfully to ${email}`)
+          logger.info(`✅ Email sent successfully to ${email}`)
         } catch (error) {
-          console.error("❌ Error processing email:", error)
+          logger.error(`❌ Error processing email: ${error as Error}`)
 
           // RETRY LOGIC
           if (error instanceof SyntaxError) {
-            console.error("Fatal JSON error. Sending to DLQ.")
+            logger.error("Fatal JSON error. Sending to DLQ.")
             return
           }
 
@@ -154,7 +153,7 @@ export const consume_queue = async (
           const retryCount = (headers["x-retry-count"] || 0) as number
 
           if (retryCount < MAX_RETRIES) {
-            console.warn(
+            logger.warn(
               `⏳ Retrying (${
                 retryCount + 1
               }/${MAX_RETRIES})... sending to ${waitKey}`,
@@ -167,7 +166,7 @@ export const consume_queue = async (
 
             ch.ack(msg)
           } else {
-            console.error(`💀 Max retries reached. Sending to Dead Letter.`)
+            logger.error(`💀 Max retries reached. Sending to Dead Letter.`)
 
             // Update DB status if we have the ID from the partial parse
             if (parsedData?.request_id) {
@@ -176,7 +175,7 @@ export const consume_queue = async (
                 request_id: parsedData.request_id,
                 error: (error as Error)?.message ?? "Unknown error",
               }).catch((e: unknown) =>
-                console.error("Failed to update status DB:", e),
+                logger.error(`Failed to update status DB: ${e as Error}`),
               )
             }
 

@@ -1,4 +1,6 @@
 import { config } from "@shared/config/index.js"
+import logger from "@shared/utils/logger.js"
+
 import app from "./app.js"
 import send_mail from "./lib/helpers/send_mail.js"
 import { consume_queue } from "./queue/rabbitmq.js"
@@ -25,7 +27,7 @@ async function registerService() {
     },
   )
 
-  console.log(
+  logger.info(
     `[${config.EMAIL_SERVICE}] Registered with Consul at ${config.CONSUL_HOST}:${config.CONSUL_PORT}`,
   )
 }
@@ -38,15 +40,15 @@ async function deregisterService() {
       `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
       { method: "PUT" },
     )
-    console.log(`[${config.EMAIL_SERVICE}] Deregistered from Consul`)
+    logger.info(`[${config.EMAIL_SERVICE}] Deregistered from Consul`)
   } catch (err) {
-    console.error("Failed to deregister from Consul:", err)
+    logger.error(`Failed to deregister from Consul:, ${err as Error}`)
   }
 }
 
 // Handle graceful shutdown
 const gracefulShutdown = async (signal: string) => {
-  console.log(`\n🛑 Received ${signal}, shutting down gracefully...`)
+  logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
   await deregisterService()
   await app.close()
@@ -61,13 +63,13 @@ const start = async () => {
   try {
     await app.listen({ port: config.EMAIL_SERVICE_PORT, host: config.HOST })
     await consume_queue(send_mail)
-    console.log(`Email service listening on port ${config.EMAIL_SERVICE_PORT}`)
+    logger.info(`Email service listening on port ${config.EMAIL_SERVICE_PORT}`)
 
     await registerService()
   } catch (err) {
-    app.log.error(err)
+    logger.error(err)
     process.exit(1)
   }
 }
 
-start()
+void start()

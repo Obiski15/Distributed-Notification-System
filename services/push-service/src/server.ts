@@ -1,3 +1,4 @@
+import logger from "@shared/utils/logger.js"
 import amqp from "amqplib"
 import app from "./app.js"
 import { consume_queue } from "./queue/rabbitmq.js"
@@ -8,12 +9,13 @@ import { config } from "@shared/config/index.js"
 async function connectRabbit() {
   const connection = await amqp.connect(config.RABBITMQ_CONNECTION_URL)
   const channel = await connection.createChannel()
-  console.log("✅ Connected to RabbitMQ")
+  logger.info("✅ Connected to RabbitMQ")
   return channel
 }
 
 connectRabbit().catch(err => {
-  console.error("❌ RabbitMQ connection failed:", err.message)
+  logger.error(`❌ RabbitMQ connection failed: ${err.message}`)
+  process.exit(1)
 })
 
 // register consul for dynamic service discovery
@@ -38,7 +40,7 @@ async function registerService() {
     },
   )
 
-  console.log(
+  logger.info(
     `[${config.PUSH_SERVICE}] Registered with Consul at ${config.PUSH_SERVICE}:${config.PUSH_SERVICE_PORT}`,
   )
 }
@@ -52,15 +54,15 @@ async function deregisterService() {
       `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
       { method: "PUT" },
     )
-    console.log(`[${config.PUSH_SERVICE}] Deregistered from Consul`)
+    logger.info(`[${config.PUSH_SERVICE}] Deregistered from Consul`)
   } catch (err) {
-    console.error("Failed to deregister from Consul:", err)
+    logger.error(`Failed to deregister from Consul: ${err as Error}`)
   }
 }
 
 // Handle graceful shutdown
 const gracefulShutdown = async (signal: string) => {
-  console.log(`\n🛑 Received ${signal}, shutting down gracefully...`)
+  logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
   await deregisterService()
   await app.close()
@@ -75,13 +77,13 @@ const start = async () => {
   try {
     await app.listen({ port: config.PUSH_SERVICE_PORT, host: config.HOST })
     await consume_queue(send_push_notification)
-    console.log(`Push service listening on port ${config.PUSH_SERVICE_PORT}`)
+    logger.info(`Push service listening on port ${config.PUSH_SERVICE_PORT}`)
 
     await registerService()
   } catch (err) {
-    app.log.error(err)
+    logger.error(err)
     process.exit(1)
   }
 }
 
-start()
+void start()

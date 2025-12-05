@@ -3,17 +3,16 @@ import {
   Catch,
   ExceptionFilter,
   HttpStatus,
-  Logger,
 } from "@nestjs/common"
 import type { IError } from "@shared/types"
 import { AxiosError } from "axios"
 import { FastifyReply } from "fastify"
 import { CustomException } from "../custom/custom-exceptions"
 
+import logger from "@shared/utils/logger"
+
 @Catch()
 export class GlobalFilter implements ExceptionFilter {
-  constructor(private readonly logger: Logger) {}
-
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp()
     const reply = ctx.getResponse<FastifyReply>()
@@ -35,7 +34,7 @@ export class GlobalFilter implements ExceptionFilter {
       status_code = (exception.response?.data as IError).status_code
     }
 
-    console.log(exception)
+    logger.error(exception)
 
     const errorResponse = {
       status,
@@ -44,7 +43,7 @@ export class GlobalFilter implements ExceptionFilter {
       stack,
     }
 
-    this.logger.log(errorResponse)
+    logger.error(errorResponse)
 
     reply.status(status_code).send(errorResponse)
   }

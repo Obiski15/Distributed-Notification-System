@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common"
+import { Inject, Injectable, NotFoundException } from "@nestjs/common"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
 
 import { RabbitMQProvider } from "../../providers/rabbitmq.provider"
 
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager"
+import logger from "@shared/utils/logger"
 import { UserService } from "../user/user.service"
 import { UpdateNotificationStatusDto } from "./dto/notification-status.dto"
 import { CreateNotificationDto, NotificationType } from "./dto/notification.dto"
@@ -28,7 +29,6 @@ export class NotificationsService {
     @Inject(CACHE_MANAGER) private cache: Cache,
     private readonly rabbitmq: RabbitMQProvider,
     private readonly userService: UserService,
-    private readonly logger: Logger,
   ) {}
 
   async handleNotification(payload: CreateNotificationDto) {
@@ -125,7 +125,7 @@ export class NotificationsService {
         data: { request_id, notification_type, priority },
       }
     } catch (error) {
-      this.logger.error(error)
+      logger.error(error)
       return {
         success: false,
         message: SYSTEM_MESSAGES.QUEUE_PUBLISH_FAILED,

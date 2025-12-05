@@ -1,10 +1,6 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from "@nestjs/common"
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { config } from "@shared/config/index"
+import logger from "@shared/utils/logger"
 import * as amqp from "amqplib"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
@@ -20,12 +16,10 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
   public channel!: amqp.Channel
   private connection!: amqp.ChannelModel
 
-  constructor(private readonly logger: Logger) {}
-
   async onModuleInit() {
     try {
       await this.connect()
-      Logger.log("✅ Connected to RabbitMQ")
+      logger.info("✅ Connected to RabbitMQ")
     } catch {
       throw new CustomException("❌ Fatal: Could not connect to RabbitMQ", 500)
     }
@@ -33,7 +27,7 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.disconnect()
-    this.logger.log("Disconnected from RabbitMQ")
+    logger.info("Disconnected from RabbitMQ")
   }
 
   publish<T>({ routingKey, options, data }: IPublish<T>) {
