@@ -12,5 +12,8 @@ export interface IError extends Error {
   message: string
   status_code: number
   is_operational?: boolean
+  code?: string
   validation?: any
+  details?: any
+  stack?: string
 }

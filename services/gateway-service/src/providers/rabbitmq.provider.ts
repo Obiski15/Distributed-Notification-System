@@ -1,5 +1,8 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { config } from "@shared/config/index"
+import * as ERROR_CODES from "@shared/constants/error-codes"
+import * as STATUS_CODES from "@shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
 import logger from "@shared/utils/logger"
 import * as amqp from "amqplib"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
@@ -20,8 +23,15 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
     try {
       await this.connect()
       logger.info("✅ Connected to RabbitMQ")
-    } catch {
-      throw new CustomException("❌ Fatal: Could not connect to RabbitMQ", 500)
+    } catch (error) {
+      logger.error(error, "❌ Fatal: Could not connect to RabbitMQ")
+      throw new CustomException({
+        message: SYSTEM_MESSAGES.SERVICE_UNAVAILABLE,
+        status_code: STATUS_CODES.SERVICE_UNAVAILABLE,
+        code: ERROR_CODES.SERVICE_UNAVAILABLE,
+        details: "Could not connect to RabbitMQ",
+        is_operational: false,
+      })
     }
   }
 

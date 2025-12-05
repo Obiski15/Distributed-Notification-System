@@ -1,4 +1,5 @@
 import type { ResultSetHeader, RowDataPacket } from "@fastify/mysql"
+import * as ERROR_CODES from "@shared/constants/error-codes.js"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import * as SYS_MESSAGES from "@shared/constants/system-message.js"
 import AppError from "@shared/utils/AppError.js"
@@ -33,18 +34,20 @@ export class AuthModel extends BaseModel {
 
   register = async (data: Register) => {
     if (!data.password || data.password.length < 6)
-      throw new AppError(
-        SYS_MESSAGES.INVALID_PASSWORD_FORMAT,
-        STATUS_CODES.BAD_REQUEST,
-      )
+      throw new AppError({
+        message: SYS_MESSAGES.INVALID_PASSWORD_FORMAT,
+        status_code: STATUS_CODES.BAD_REQUEST,
+        code: ERROR_CODES.VALIDATION_ERROR,
+      })
 
     const existingUser = await this.find_by_email(data.email)
 
     if (existingUser)
-      throw new AppError(
-        SYS_MESSAGES.USER_ALREADY_EXISTS,
-        STATUS_CODES.CONFLICT,
-      )
+      throw new AppError({
+        message: SYS_MESSAGES.USER_ALREADY_EXISTS,
+        status_code: STATUS_CODES.CONFLICT,
+        code: ERROR_CODES.USER_ALREADY_EXISTS,
+      })
 
     const hashedPassword = await this.hashPassword(data.password)
 
@@ -74,7 +77,11 @@ export class AuthModel extends BaseModel {
     const user = await this.find_by_email(data.email)
 
     if (!user)
-      throw new AppError(SYS_MESSAGES.USER_NOT_FOUND, STATUS_CODES.NOT_FOUND)
+      throw new AppError({
+        message: SYS_MESSAGES.USER_NOT_FOUND,
+        status_code: STATUS_CODES.NOT_FOUND,
+        code: ERROR_CODES.USER_NOT_FOUND,
+      })
 
     // Compare password
     const isPasswordValid = await this.comparePassword(
@@ -82,10 +89,11 @@ export class AuthModel extends BaseModel {
       user.password,
     )
     if (!isPasswordValid)
-      throw new AppError(
-        SYS_MESSAGES.INVALID_CREDENTIALS,
-        STATUS_CODES.BAD_REQUEST,
-      )
+      throw new AppError({
+        message: SYS_MESSAGES.INVALID_CREDENTIALS,
+        status_code: STATUS_CODES.BAD_REQUEST,
+        code: ERROR_CODES.INVALID_CREDENTIALS,
+      })
 
     // Remove password from user object
     const userWithoutPassword: UserWithoutPassword = {

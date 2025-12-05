@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest } from "fastify"
 
+import * as ERROR_CODES from "@shared/constants/error-codes.js"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
 import AppError from "@shared/utils/AppError.js"
@@ -22,10 +23,11 @@ const user_route = (fastify: FastifyInstance) => {
   fastify.addHook("preHandler", (request, _reply, done) => {
     const id = request.headers["x-user-id"]
     if (!id)
-      throw new AppError(
-        SYSTEM_MESSAGES.MISSING_USERID_HEADER,
-        STATUS_CODES.BAD_REQUEST,
-      )
+      throw new AppError({
+        message: SYSTEM_MESSAGES.MISSING_USERID_HEADER,
+        status_code: STATUS_CODES.BAD_REQUEST,
+        code: ERROR_CODES.VALIDATION_ERROR,
+      })
 
     done()
   })

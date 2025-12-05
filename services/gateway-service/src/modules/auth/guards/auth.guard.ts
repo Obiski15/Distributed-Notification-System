@@ -7,6 +7,7 @@ import {
 import { Reflector } from "@nestjs/core"
 import { JwtService } from "@nestjs/jwt"
 import { config } from "@shared/config/index"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
 import { FastifyRequest } from "fastify"
 import { IS_INTERNAL_KEY } from "../../../decorators/isInternal.decorator"
 import { IS_PUBLIC_KEY } from "../../../decorators/public.decorator"
@@ -57,7 +58,7 @@ export class AuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request)
 
     if (!token) {
-      throw new UnauthorizedException("Missing auth token")
+      throw new UnauthorizedException(SYSTEM_MESSAGES.MISSING_AUTH_TOKEN)
     }
 
     let payload: IUserPayload | null = null
@@ -67,7 +68,7 @@ export class AuthGuard implements CanActivate {
         secret: config.JWT_ACCESS_SECRET,
       })
     } catch {
-      throw new UnauthorizedException("Invalid auth token")
+      throw new UnauthorizedException(SYSTEM_MESSAGES.INVALID_AUTH_TOKEN)
     }
 
     const user = await this.userService.get_user(payload?.sub)

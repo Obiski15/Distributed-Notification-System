@@ -1,4 +1,5 @@
 import { config } from "@shared/config/index.js"
+import * as ERROR_CODES from "@shared/constants/error-codes.js"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import AppError from "@shared/utils/AppError.js"
 import circuit_breaker from "@shared/utils/circuit_breaker.js"
@@ -25,10 +26,11 @@ export const fetch_template = async (template_code: string) => {
     } catch (error) {
       if (error instanceof AxiosError) throw error.response?.data
 
-      throw new AppError(
-        `Request to '${config.TEMPLATE_SERVICE}' failed`,
-        STATUS_CODES.INTERNAL_SERVER_ERROR,
-      )
+      throw new AppError({
+        message: `Request to '${config.TEMPLATE_SERVICE}' failed`,
+        status_code: STATUS_CODES.INTERNAL_SERVER_ERROR,
+        code: ERROR_CODES.SERVICE_UNAVAILABLE,
+      })
     }
   }, config.TEMPLATE_SERVICE).fire()
 

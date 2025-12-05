@@ -49,3 +49,17 @@ export const NOTIFICATION_STATUS_UPDATED = "notification status updated."
 export const QUEUE_PUBLISH_FAILED = "Failed to queue notification request."
 export const NOTIFICATION_RETRIEVED = "Notification retrieved successfully"
 export const NOTIFICATION_NOT_FOUND = "Notification with that id not found"
+
+// PUSH NOTIFICATIONS
+export const INVALID_FCM_TOKEN = "Invalid or missing FCM registration token"
+
+// CORS
+export const CORS_ORIGIN_NOT_ALLOWED = "Origin not allowed by CORS"
+
+// AUTHENTICATION
+export const MISSING_AUTH_TOKEN = "Missing auth token"
+export const INVALID_AUTH_TOKEN = "Invalid auth token"
+export const UNAUTHORIZED = "Unauthorized"
+
+// GATEWAY
+export const BAD_GATEWAY = "Error communicating with upstream service"

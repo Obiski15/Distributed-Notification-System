@@ -1,6 +1,7 @@
 import { config } from "@shared/config/index.js"
-import admin from "firebase-admin"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
 import logger from "@shared/utils/logger.js"
+import admin from "firebase-admin"
 
 // Initialize Firebase Admin SDK
 let firebaseApp: admin.app.App | null = null
@@ -80,7 +81,7 @@ async function send_push_notification(payload: PushNotificationPayload) {
     }
     //check if FCM token was sent
     if (!payload.token || payload.token.length < 100) {
-      throw new Error("Invalid or missing FCM registration token")
+      throw new Error(SYSTEM_MESSAGES.INVALID_FCM_TOKEN)
     }
 
     await messaging.send(message)

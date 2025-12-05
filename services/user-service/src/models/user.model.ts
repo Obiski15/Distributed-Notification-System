@@ -1,4 +1,5 @@
 import type { RowDataPacket } from "@fastify/mysql"
+import * as ERROR_CODES from "@shared/constants/error-codes.js"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
 import AppError from "@shared/utils/AppError.js"
@@ -35,10 +36,11 @@ export class UserModel extends BaseModel {
       const existingUser = await this.find_by_email(data.email)
 
       if (existingUser.id !== id)
-        throw new AppError(
-          SYSTEM_MESSAGES.USER_ALREADY_EXISTS,
-          STATUS_CODES.CONFLICT,
-        )
+        throw new AppError({
+          message: SYSTEM_MESSAGES.USER_ALREADY_EXISTS,
+          status_code: STATUS_CODES.CONFLICT,
+          code: ERROR_CODES.USER_ALREADY_EXISTS,
+        })
     }
 
     Object.entries(data).forEach(([key, value]) => {
@@ -49,10 +51,11 @@ export class UserModel extends BaseModel {
     })
 
     if (setClauses.length === 0) {
-      throw new AppError(
-        SYSTEM_MESSAGES.NO_VALID_UPDATE_FIELDS,
-        STATUS_CODES.BAD_REQUEST,
-      )
+      throw new AppError({
+        message: SYSTEM_MESSAGES.NO_VALID_UPDATE_FIELDS,
+        status_code: STATUS_CODES.BAD_REQUEST,
+        code: ERROR_CODES.VALIDATION_ERROR,
+      })
     }
 
     await this.find_by_id(id)

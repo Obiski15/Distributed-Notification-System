@@ -4,6 +4,8 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from "@nestjs/platform-fastify"
+import * as STATUS_CODES from "@shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
 import logger from "@shared/utils/logger"
 import { AppModule } from "./app.module"
 
@@ -21,7 +23,7 @@ async function bootstrap() {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true)
 
-      return cb(new Error("Origin not allowed by CORS"), false)
+      return cb(new Error(SYSTEM_MESSAGES.CORS_ORIGIN_NOT_ALLOWED), false)
     },
   })
 
@@ -34,7 +36,7 @@ async function bootstrap() {
   instance.get("/health", (_req, reply) => {
     reply.send({
       success: true,
-      status_code: 200,
+      status_code: STATUS_CODES.OK,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
     })
@@ -76,4 +78,4 @@ async function bootstrap() {
   logger.info(`API Gateway listening on PORT ${config.GATEWAY_SERVICE_PORT}`)
 }
 
-bootstrap()
+void bootstrap()

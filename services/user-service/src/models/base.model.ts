@@ -1,4 +1,5 @@
 import { RowDataPacket } from "@fastify/mysql"
+import * as ERROR_CODES from "@shared/constants/error-codes.js"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import * as SYS_MESSAGES from "@shared/constants/system-message.js"
 
@@ -34,7 +35,11 @@ export class BaseModel {
     )
 
     if (!user)
-      throw new AppError(SYS_MESSAGES.USER_NOT_FOUND, STATUS_CODES.NOT_FOUND)
+      throw new AppError({
+        message: SYS_MESSAGES.USER_NOT_FOUND,
+        status_code: STATUS_CODES.NOT_FOUND,
+        code: ERROR_CODES.USER_NOT_FOUND,
+      })
 
     return user as UserWithoutPassword
   }
