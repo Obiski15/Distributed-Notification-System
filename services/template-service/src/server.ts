@@ -41,7 +41,12 @@ const start = async () => {
       },
     ])
   } catch (err) {
-    logger.error(err)
+    logger.error(err, `❌ Failed to start ${config.TEMPLATE_SERVICE}`)
+    try {
+      await app.close()
+    } catch {
+      // Ignore errors during cleanup
+    }
     process.exit(1)
   }
 }

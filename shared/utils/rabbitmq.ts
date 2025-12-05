@@ -1,5 +1,5 @@
 import amqplib from "amqplib"
-import logger from "./logger.js"
+import logger from "./logger"
 
 let connection: amqplib.ChannelModel | null = null
 let channel: amqplib.Channel | null = null

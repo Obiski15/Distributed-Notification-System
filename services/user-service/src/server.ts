@@ -39,7 +39,12 @@ const start = async () => {
       },
     ])
   } catch (err) {
-    logger.error(err)
+    logger.error(err, "❌ Failed to start user service")
+    try {
+      await app.close()
+    } catch {
+      // Ignore errors during cleanup
+    }
     process.exit(1)
   }
 }

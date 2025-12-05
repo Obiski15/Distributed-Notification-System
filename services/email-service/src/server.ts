@@ -20,12 +20,14 @@ const consul_config = {
 const start = async () => {
   try {
     await app.listen({ port: config.EMAIL_SERVICE_PORT, host: config.HOST })
-    await consume_queue(send_mail)
     logger.info(`Email service listening on port ${config.EMAIL_SERVICE_PORT}`)
 
+    await consume_queue(send_mail)
     await register_consul_service(consul_config)
 
-    // Setup graceful shutdown
+    logger.info("✅ Email service started successfully")
+
+    // Setup graceful shutdown ONLY after successful startup
     setup_graceful_shutdown([
       {
         cleanup: async () => {
@@ -47,7 +49,13 @@ const start = async () => {
       },
     ])
   } catch (err) {
-    logger.error(err)
+    logger.error(err, `❌ Failed to start ${config.EMAIL_SERVICE}`)
+    // Close app and connections before exit
+    try {
+      await app.close()
+    } catch {
+      // Ignore errors during cleanup
+    }
     process.exit(1)
   }
 }

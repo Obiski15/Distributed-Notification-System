@@ -1,4 +1,4 @@
-import logger from "./logger.js"
+import logger from "./logger"
 
 interface ShutdownHandler {
   cleanup: () => Promise<void>
@@ -6,7 +6,16 @@ interface ShutdownHandler {
 }
 
 export function setup_graceful_shutdown(handlers: ShutdownHandler[]): void {
+  let is_shutting_down = false
+
   const graceful_shutdown = async (signal: string) => {
+    // Prevent multiple simultaneous shutdown attempts
+    if (is_shutting_down) {
+      logger.warn(`Already shutting down, ignoring ${signal}`)
+      return
+    }
+    is_shutting_down = true
+
     logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
     let shutdown_timeout: NodeJS.Timeout | undefined
@@ -61,16 +70,5 @@ export function setup_graceful_shutdown(handlers: ShutdownHandler[]): void {
       logger.error(`Fatal error during SIGTERM shutdown: ${err}`)
       process.exit(1)
     })
-  })
-
-  // Handle uncaught errors
-  process.on("uncaughtException", err => {
-    logger.error(`❌ Uncaught Exception: ${err}`)
-    graceful_shutdown("UNCAUGHT_EXCEPTION").catch(() => process.exit(1))
-  })
-
-  process.on("unhandledRejection", (reason, _promise) => {
-    logger.error(`❌ Unhandled Rejection - Reason: ${String(reason)}`)
-    graceful_shutdown("UNHANDLED_REJECTION").catch(() => process.exit(1))
   })
 }

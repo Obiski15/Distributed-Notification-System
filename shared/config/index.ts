@@ -70,11 +70,22 @@ export const config = {
         resetTimeout: 1000,
         errorThresholdPercentage: 50,
         volumeThreshold: 1,
+        errorFilter: (err: any) => {
+          // Only count 5xx errors
+          const status = err?.response?.status || err?.status
+          return !status || status >= 500
+        },
       }
     : {
         timeout: 3000,
         resetTimeout: 30000,
         errorThresholdPercentage: 20,
         volumeThreshold: 10,
+        errorFilter: (err: any) => {
+          // Only count 5xx errors, timeouts, and network errors
+          // Do NOT count 4xx errors (client errors)
+          const status = err?.response?.status || err?.status
+          return !status || status >= 500
+        },
       },
 }

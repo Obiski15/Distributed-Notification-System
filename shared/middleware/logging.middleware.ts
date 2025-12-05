@@ -2,7 +2,8 @@ import { FastifyReply, FastifyRequest } from "fastify"
 import logger from "../utils/logger.js"
 import { sanitize_object } from "../utils/sanitizer.js"
 
-export function logging_middleware(
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function logging_middleware(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {

@@ -29,31 +29,13 @@ help:
 	@echo "  shell-user           - Shell into user service"
 	@echo "  shell-push           - Shell into push service"
 	@echo "  shell-mysql          - MySQL shell"
-	@echo "  dev                  - Start all services in dev mode"
-	@echo "  dev-build            - Build and start all services in dev mode"
-	@echo "  dev-build-gateway    - Build gateway service in dev mode"
-	@echo "  dev-build-email      - Build email service in dev mode"
-	@echo "  dev-build-template   - Build template service in dev mode"
-	@echo "  dev-build-user       - Build user service in dev mode"
-	@echo "  dev-build-push       - Build push service in dev mode"
-	@echo "  dev-down             - Stop all dev services"
-	@echo "  dev-logs             - Show logs for all dev services"
-	@echo "  dev-logs-gateway     - Show logs for gateway dev service"
-	@echo "  dev-logs-email       - Show logs for email dev service"
-	@echo "  dev-logs-template    - Show logs for template dev service"
-	@echo "  dev-logs-user        - Show logs for user dev service"
-	@echo "  dev-logs-push        - Show logs for push dev service"
-	@echo "  dev-gateway          - Start only gateway service in dev mode"
-	@echo "  dev-email            - Start only email service in dev mode"
-	@echo "  dev-template         - Start only template service in dev mode"
-	@echo "  dev-user             - Start only user service in dev mode"
-	@echo "  dev-push             - Start only push service in dev mode"
 	@echo "  rebuild-gateway      - Rebuild and restart gateway service"
 	@echo "  rebuild-email        - Rebuild and restart email service"
 	@echo "  rebuild-template     - Rebuild and restart template service"
 	@echo "  rebuild-user         - Rebuild and restart user service"
 	@echo "  rebuild-push         - Rebuild and restart push service"
 	@echo "  health               - Check health of all services"
+	@echo "  infra                - Start infrastructure services only (MySQL, RabbitMQ, Redis, Consul)"
 # ----------------------------
 # Docker management (production)
 # ----------------------------
@@ -141,67 +123,15 @@ shell-mysql:
 	docker-compose exec mysql mysql -u template_user -p
 
 # ----------------------------
-# Development mode (merged with docker-compose.dev.yml)
+# Infrastructure services (for local development)
 # ----------------------------
-DEV_COMPOSE=-f docker-compose.yml -f docker-compose.dev.yml
-
-dev:
-	docker-compose $(DEV_COMPOSE) up -d
-
-dev-build:
-	docker-compose $(DEV_COMPOSE) up -d --build
-
-dev-build-gateway:
-	docker-compose $(DEV_COMPOSE) build --no-cache gateway-service
-
-dev-build-email:
-	docker-compose $(DEV_COMPOSE) build --no-cache email-service
-
-dev-build-template:
-	docker-compose $(DEV_COMPOSE) build --no-cache template-service
-
-dev-build-user:
-	docker-compose $(DEV_COMPOSE) build --no-cache user-service
-
-dev-build-push:
-	docker-compose $(DEV_COMPOSE) build --no-cache push-service
-
-dev-down:
-	docker-compose $(DEV_COMPOSE) down
-
-dev-logs:
-	docker-compose $(DEV_COMPOSE) logs -f
-
-dev-logs-gateway:
-	docker-compose $(DEV_COMPOSE) logs -f gateway-service
-
-dev-logs-email:
-	docker-compose $(DEV_COMPOSE) logs -f email-service
-
-dev-logs-template:
-	docker-compose $(DEV_COMPOSE) logs -f template-service
-
-dev-logs-user:
-	docker-compose $(DEV_COMPOSE) logs -f user-service
-
-dev-logs-push:
-	docker-compose $(DEV_COMPOSE) logs -f push-service
-
-# Single service dev starts
-dev-gateway:
-	docker-compose $(DEV_COMPOSE) up -d gateway-service
-
-dev-email:
-	docker-compose $(DEV_COMPOSE) up -d email-service
-
-dev-template:
-	docker-compose $(DEV_COMPOSE) up -d template-service
-
-dev-user:
-	docker-compose $(DEV_COMPOSE) up -d user-service
-
-dev-push:
-	docker-compose $(DEV_COMPOSE) up -d push-service
+infra:
+	docker-compose up -d mysql rabbitmq redis consul
+	@echo "Infrastructure services started. Access:"
+	@echo "  MySQL:    localhost:3306"
+	@echo "  RabbitMQ: localhost:5672 (Management: http://localhost:15672)"
+	@echo "  Redis:    localhost:6379"
+	@echo "  Consul:   http://localhost:8500"
 
 # ----------------------------
 # Rebuild specific service

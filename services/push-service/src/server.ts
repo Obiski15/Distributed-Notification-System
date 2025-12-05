@@ -1,5 +1,4 @@
 import logger from "@shared/utils/logger.js"
-import amqp from "amqplib"
 import app from "./app.js"
 import { close_connection, consume_queue } from "./queue/rabbitmq.js"
 import { send_push_notification } from "./utils/send_push.js"
@@ -18,27 +17,17 @@ const consul_config = {
   consul_port: config.CONSUL_PORT,
 }
 
-async function connect_rabbit() {
-  const connection = await amqp.connect(config.RABBITMQ_CONNECTION_URL)
-  const channel = await connection.createChannel()
-  logger.info("✅ Connected to RabbitMQ")
-  return channel
-}
-
-connect_rabbit().catch(err => {
-  logger.error(`❌ RabbitMQ connection failed: ${err.message}`)
-  process.exit(1)
-})
-
 const start = async () => {
   try {
     await app.listen({ port: config.PUSH_SERVICE_PORT, host: config.HOST })
-    await consume_queue(send_push_notification)
     logger.info(`Push service listening on port ${config.PUSH_SERVICE_PORT}`)
 
+    await consume_queue(send_push_notification)
     await register_consul_service(consul_config)
 
-    // Setup graceful shutdown
+    logger.info("✅ Push service started successfully")
+
+    // graceful shutdown
     setup_graceful_shutdown([
       {
         cleanup: async () => {
@@ -60,7 +49,12 @@ const start = async () => {
       },
     ])
   } catch (err) {
-    logger.error(err)
+    logger.error(err, `❌ Failed to start ${config.PUSH_SERVICE}`)
+    try {
+      await app.close()
+    } catch {
+      // Ignore errors during cleanup
+    }
     process.exit(1)
   }
 }

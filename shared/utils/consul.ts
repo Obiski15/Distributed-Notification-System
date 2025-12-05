@@ -1,4 +1,4 @@
-import logger from "./logger.js"
+import logger from "./logger"
 
 interface ConsulServiceConfig {
   service_name: string
@@ -12,13 +12,19 @@ export async function register_consul_service(
 ): Promise<void> {
   const service_id = `${config.service_name}-${config.service_port}`
 
+  // Use host.docker.internal when Consul is on localhost (Docker can reach host), otherwise use service name
+  const service_address =
+    config.consul_host === "localhost" || config.consul_host === "127.0.0.1"
+      ? "host.docker.internal"
+      : config.service_name
+
   const body = {
     Name: config.service_name,
     ID: service_id,
-    Address: config.service_name,
+    Address: service_address,
     Port: config.service_port,
     Check: {
-      HTTP: `http://${config.service_name}:${config.service_port}/health`,
+      HTTP: `http://${service_address}:${config.service_port}/health`,
       Interval: "10s",
     },
   }
