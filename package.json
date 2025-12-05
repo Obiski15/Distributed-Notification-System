@@ -9,12 +9,15 @@
     "format": "prettier --write \"**/*.{ts,js,json,md,yml,yaml}\" \"test/**/*.ts\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md,yml,yaml}\" \"test/**/*.ts\"",
     "lint": "eslint \"{services,shared}/**/*.ts\"",
-    "lint:fix": "eslint \"{services,shared}/**/*.ts\" --fix"
+    "lint:fix": "eslint \"{services,shared}/**/*.ts\" --fix",
+    "type-check": "pnpm -r --parallel run type-check",
+    "build:all": "pnpm -r --parallel run build"
   },
   "lint-staged": {
     "*.ts": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "type-check"
     ]
   },
   "workspaces": [

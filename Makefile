@@ -164,5 +164,5 @@ health:
 	@curl -f http://localhost:3000/health || echo "Gateway Service: DOWN"
 	@curl -f http://localhost:3001/health || echo "Email Service: DOWN"
 	@curl -f http://localhost:3002/health || echo "Template Service: DOWN"
-	@curl -f http://localhost:8000/health || echo "User Service: DOWN"
 	@curl -f http://localhost:3003/health || echo "Push Service: DOWN"
+	@curl -f http://localhost:3004/health || echo "User Service: DOWN"
