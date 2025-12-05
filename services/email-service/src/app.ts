@@ -4,8 +4,12 @@ const app = Fastify({ logger: false })
 
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
+import { logging_middleware } from "@shared/middleware/logging.middleware.js"
 import health_schema from "@shared/schemas/health-schema.js"
 import error_handler from "@shared/utils/error_handler.js"
+
+// Add logging middleware
+app.addHook("onRequest", logging_middleware)
 
 app.setNotFoundHandler((_request, reply) => {
   reply.status(STATUS_CODES.NOT_FOUND).send({

@@ -4,9 +4,11 @@ RUN npm install -g pnpm@10.20.0
 
 WORKDIR /app
 
-COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
 COPY services/user-service/package.json ./services/user-service/
+COPY shared/package.json ./shared/
 COPY services/user-service ./services/user-service
+COPY shared ./shared
 
 RUN pnpm install --frozen-lockfile --filter user-service...
 RUN pnpm --filter user-service run build
@@ -22,10 +24,12 @@ COPY pnpm-workspace.yaml ./
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 COPY services/user-service/package.json ./services/user-service/
+COPY shared/package.json ./shared/
 
 RUN pnpm install --prod --frozen-lockfile --filter user-service --ignore-scripts
 
 COPY --from=builder /app/services/user-service/dist ./services/user-service/dist
+COPY --from=builder /app/shared/dist ./shared/dist
 
 EXPOSE 3004
 

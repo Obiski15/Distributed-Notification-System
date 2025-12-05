@@ -2,11 +2,15 @@ import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
+import { logging_middleware } from "@shared/middleware/logging.middleware.js"
 import health_schema from "@shared/schemas/health-schema.js"
 import error_handler from "@shared/utils/error_handler.js"
 import Fastify, { FastifyReply, FastifyRequest } from "fastify"
 
 const app = Fastify({ logger: false })
+
+// Add logging middleware
+app.addHook("onRequest", logging_middleware)
 
 // Register Swagger
 await app.register(swagger, {

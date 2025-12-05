@@ -1,7 +1,8 @@
-import { Module } from "@nestjs/common"
+import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common"
 import { APP_FILTER, APP_GUARD } from "@nestjs/core"
 
 import { GlobalFilter } from "./common/exceptions/filters/global-filter"
+import { LoggingMiddleware } from "./common/middleware/logging.middleware"
 
 import { CacheModule } from "@nestjs/cache-manager"
 import { JwtModule } from "@nestjs/jwt"
@@ -39,6 +40,7 @@ import { UserModule } from "./modules/user/user.module"
   ],
   controllers: [AuthController, TemplateController],
   providers: [
+    LoggingMiddleware,
     {
       provide: APP_FILTER,
       useClass: GlobalFilter,
@@ -49,4 +51,8 @@ import { UserModule } from "./modules/user/user.module"
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggingMiddleware).forRoutes("*")
+  }
+}

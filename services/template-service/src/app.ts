@@ -6,11 +6,15 @@ import Fastify from "fastify"
 import { config } from "@shared/config/index.js"
 import * as STATUS_CODES from "@shared/constants/status-codes.js"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
+import { logging_middleware } from "@shared/middleware/logging.middleware.js"
 import error_handler from "@shared/utils/error_handler.js"
 
 import template_routes from "./routes/template_route.js"
 
 const app = Fastify({ logger: false })
+
+// Add logging middleware
+app.addHook("onRequest", logging_middleware)
 
 await app.register(swagger, {
   openapi: {
