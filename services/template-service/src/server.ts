@@ -1,54 +1,23 @@
 import { config } from "@shared/config/index.js"
+import {
+  deregister_consul_service,
+  register_consul_service,
+} from "@shared/utils/consul.js"
 import logger from "@shared/utils/logger.js"
 import app from "./app.js"
 
-// register consul for dynamic service discovery
-async function register_service() {
-  const body = {
-    Name: config.TEMPLATE_SERVICE,
-    ID: `${config.TEMPLATE_SERVICE}-${config.TEMPLATE_SERVICE_PORT}`,
-    Address: config.TEMPLATE_SERVICE,
-    Port: config.TEMPLATE_SERVICE_PORT,
-    Check: {
-      HTTP: `http://${config.TEMPLATE_SERVICE}:${config.TEMPLATE_SERVICE_PORT}/health`,
-      Interval: "10s",
-    },
-  }
-
-  await fetch(
-    `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/register`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
-
-  logger.info(
-    `[${config.TEMPLATE_SERVICE}] Registered with Consul at ${config.TEMPLATE_SERVICE}:${config.TEMPLATE_SERVICE_PORT}`,
-  )
-}
-
-// Deregister service from Consul on shutdown
-async function deregister_service() {
-  const service_id = `${config.TEMPLATE_SERVICE}-${config.TEMPLATE_SERVICE_PORT}`
-
-  try {
-    await fetch(
-      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${service_id}`,
-      { method: "PUT" },
-    )
-    logger.info(`[${config.TEMPLATE_SERVICE}] Deregistered from Consul`)
-  } catch (err) {
-    logger.error(`Failed to deregister from Consul: ${err as Error}`)
-  }
+const consul_config = {
+  service_name: config.TEMPLATE_SERVICE,
+  service_port: config.TEMPLATE_SERVICE_PORT,
+  consul_host: config.CONSUL_HOST,
+  consul_port: config.CONSUL_PORT,
 }
 
 // Handle graceful shutdown
 const graceful_shutdown = async (signal: string) => {
   logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
-  await deregister_service()
+  await deregister_consul_service(consul_config)
   await app.close()
 
   process.exit(0)
@@ -66,7 +35,7 @@ const start = async () => {
       `Template service listening on port ${config.TEMPLATE_SERVICE_PORT}`,
     )
 
-    await register_service()
+    await register_consul_service(consul_config)
   } catch (err) {
     logger.error(err)
     process.exit(1)

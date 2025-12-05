@@ -3,19 +3,25 @@ import { config } from "@shared/config/index"
 import * as ERROR_CODES from "@shared/constants/error-codes"
 import * as STATUS_CODES from "@shared/constants/status-codes"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
+import {
+  deregister_consul_service,
+  register_consul_service,
+} from "@shared/utils/consul"
 import logger from "@shared/utils/logger"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
 @Injectable()
 export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
-  private service_id = `${config.GATEWAY_SERVICE}-${config.GATEWAY_SERVICE_PORT}`
+  private consul_config = {
+    service_name: config.GATEWAY_SERVICE,
+    service_port: config.GATEWAY_SERVICE_PORT,
+    consul_host: config.CONSUL_HOST,
+    consul_port: config.CONSUL_PORT,
+  }
 
   async onModuleInit() {
     try {
-      await this.register_service()
-      logger.info(
-        `✅ [${config.GATEWAY_SERVICE}] Registered with Consul at ${config.CONSUL_HOST}:${config.CONSUL_PORT}`,
-      )
+      await register_consul_service(this.consul_config)
     } catch (error) {
       logger.error(error, "❌ Fatal: Could not register with Consul")
       throw new CustomException({
@@ -29,36 +35,6 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.deregister_service()
-    logger.info(`[${config.GATEWAY_SERVICE}] Deregistered from Consul`)
-  }
-
-  public async register_service() {
-    const body = {
-      Name: config.GATEWAY_SERVICE,
-      ID: `${config.GATEWAY_SERVICE}-${config.GATEWAY_SERVICE_PORT}`,
-      Address: config.GATEWAY_SERVICE,
-      Port: config.GATEWAY_SERVICE_PORT,
-      Check: {
-        HTTP: `http://${config.GATEWAY_SERVICE}:${config.GATEWAY_SERVICE_PORT}/health`,
-        Interval: "10s",
-      },
-    }
-
-    await fetch(
-      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/register`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    )
-  }
-
-  public async deregister_service() {
-    await fetch(
-      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${this.service_id}`,
-      { method: "PUT" },
-    )
+    await deregister_consul_service(this.consul_config)
   }
 }

@@ -53,3 +53,4 @@ logs/
 # local test folders
 firebase-token-gen/
 gateway-fastify/
+IMPROVEMENTS.txt

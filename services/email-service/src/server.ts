@@ -1,56 +1,26 @@
 import { config } from "@shared/config/index.js"
+import {
+  deregister_consul_service,
+  register_consul_service,
+} from "@shared/utils/consul.js"
 import logger from "@shared/utils/logger.js"
 
 import app from "./app.js"
 import send_mail from "./lib/helpers/send_mail.js"
 import { consume_queue } from "./queue/rabbitmq.js"
 
-// Register service with Consul
-async function register_service() {
-  const body = {
-    Name: config.EMAIL_SERVICE,
-    ID: `${config.EMAIL_SERVICE}-${config.EMAIL_SERVICE_PORT}`,
-    Address: config.EMAIL_SERVICE,
-    Port: config.EMAIL_SERVICE_PORT,
-    Check: {
-      HTTP: `http://${config.EMAIL_SERVICE}:${config.EMAIL_SERVICE_PORT}/health`,
-      Interval: "10s",
-    },
-  }
-
-  await fetch(
-    `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/register`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  )
-
-  logger.info(
-    `[${config.EMAIL_SERVICE}] Registered with Consul at ${config.CONSUL_HOST}:${config.CONSUL_PORT}`,
-  )
-}
-
-async function deregister_service() {
-  const service_id = `${config.EMAIL_SERVICE}-${config.EMAIL_SERVICE_PORT}`
-
-  try {
-    await fetch(
-      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${service_id}`,
-      { method: "PUT" },
-    )
-    logger.info(`[${config.EMAIL_SERVICE}] Deregistered from Consul`)
-  } catch (err) {
-    logger.error(`Failed to deregister from Consul:, ${err as Error}`)
-  }
+const consul_config = {
+  service_name: config.EMAIL_SERVICE,
+  service_port: config.EMAIL_SERVICE_PORT,
+  consul_host: config.CONSUL_HOST,
+  consul_port: config.CONSUL_PORT,
 }
 
 // Handle graceful shutdown
 const graceful_shutdown = async (signal: string) => {
   logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
-  await deregister_service()
+  await deregister_consul_service(consul_config)
   await app.close()
 
   process.exit(0)
@@ -65,7 +35,7 @@ const start = async () => {
     await consume_queue(send_mail)
     logger.info(`Email service listening on port ${config.EMAIL_SERVICE_PORT}`)
 
-    await register_service()
+    await register_consul_service(consul_config)
   } catch (err) {
     logger.error(err)
     process.exit(1)
