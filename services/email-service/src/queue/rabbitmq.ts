@@ -1,9 +1,13 @@
 import logger from "@shared/utils/logger.js"
-import amqplib, { ConsumeMessage } from "amqplib"
+import { ConsumeMessage } from "amqplib"
 import mustache from "mustache"
 import type { SendMailOptions } from "nodemailer"
 
 import { config } from "@shared/config/index.js"
+import {
+  close_rabbitmq_connection,
+  get_rabbitmq_channel,
+} from "@shared/utils/rabbitmq.js"
 import { fetch_template } from "../lib/helpers/fetch_template.js"
 import update_notification_status from "../lib/helpers/update_notification_status.js"
 
@@ -19,35 +23,10 @@ const EXCHANGE_NAME = config.NOTIFICATION_EXCHANGE
 const RETRY_DELAY_MS = config.NOTIFICATION_RETRY_DELAY
 const MAX_RETRIES = config.NOTIFICATION_MAX_RETRIES
 
-let connection: amqplib.ChannelModel | null = null
-let channel: amqplib.Channel | null = null
+export const get_channel = () =>
+  get_rabbitmq_channel(config.RABBITMQ_CONNECTION_URL)
 
-export const get_channel = async (): Promise<amqplib.Channel> => {
-  if (connection && channel) return channel
-
-  try {
-    connection = await amqplib.connect(config.RABBITMQ_CONNECTION_URL)
-
-    connection.on("error", (err: Error) => {
-      logger.error(`RabbitMQ connection error: ${err}`)
-      connection = null
-      channel = null
-    })
-
-    connection.on("close", () => {
-      logger.warn("RabbitMQ connection closed")
-      connection = null
-      channel = null
-    })
-
-    channel = await connection.createChannel()
-
-    return channel
-  } catch (error) {
-    logger.error(`Failed to connect to RabbitMQ: ${error as Error}`)
-    throw error
-  }
-}
+export const close_connection = close_rabbitmq_connection
 
 export const consume_queue = async (
   callback: (data: SendMailOptions) => Promise<void>,

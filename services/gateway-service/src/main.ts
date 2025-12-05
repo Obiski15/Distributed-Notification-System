@@ -6,6 +6,7 @@ import {
 } from "@nestjs/platform-fastify"
 import * as STATUS_CODES from "@shared/constants/status-codes"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
+import { setup_graceful_shutdown } from "@shared/utils/graceful-shutdown"
 import logger from "@shared/utils/logger"
 import { AppModule } from "./app.module"
 
@@ -55,27 +56,18 @@ async function bootstrap() {
   // const swaggerGateway = app.get(SwaggerGateway)
   // swaggerGateway.setup(app)
 
-  const gracefulShutdown = async (signal: string) => {
-    logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
-    await app.close()
-    process.exit(0)
-  }
-
-  process.on("SIGINT", () => {
-    gracefulShutdown("SIGINT").catch(err => {
-      logger.error(`Error during graceful shutdown (SIGINT): ${err}`)
-      process.exit(1)
-    })
-  })
-  process.on("SIGTERM", () => {
-    gracefulShutdown("SIGTERM").catch(err => {
-      logger.error(`Error during graceful shutdown (SIGTERM): ${err}`)
-      process.exit(1)
-    })
-  })
-
   await app.listen(config.GATEWAY_SERVICE_PORT, config.HOST)
   logger.info(`API Gateway listening on PORT ${config.GATEWAY_SERVICE_PORT}`)
+
+  // Setup graceful shutdown
+  setup_graceful_shutdown([
+    {
+      cleanup: async () => {
+        await app.close()
+      },
+      timeout: 15000,
+    },
+  ])
 }
 
 void bootstrap()

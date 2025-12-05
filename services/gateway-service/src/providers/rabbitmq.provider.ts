@@ -4,6 +4,10 @@ import * as ERROR_CODES from "@shared/constants/error-codes"
 import * as STATUS_CODES from "@shared/constants/status-codes"
 import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
 import logger from "@shared/utils/logger"
+import {
+  close_rabbitmq_connection,
+  get_rabbitmq_channel,
+} from "@shared/utils/rabbitmq"
 import * as amqp from "amqplib"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
@@ -16,13 +20,14 @@ interface IPublish<T> {
 
 @Injectable()
 export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
-  public channel!: amqp.Channel
-  private connection!: amqp.ChannelModel
+  public channel: amqp.Channel
 
   async onModuleInit() {
     try {
-      await this.connect()
-      logger.info("✅ Connected to RabbitMQ")
+      this.channel = await get_rabbitmq_channel(config.RABBITMQ_CONNECTION_URL)
+      await this.channel.assertExchange(config.NOTIFICATION_EXCHANGE, "topic", {
+        durable: true,
+      })
     } catch (error) {
       logger.error(error, "❌ Fatal: Could not connect to RabbitMQ")
       throw new CustomException({
@@ -36,8 +41,7 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.disconnect()
-    logger.info("Disconnected from RabbitMQ")
+    await close_rabbitmq_connection()
   }
 
   publish<T>({ routingKey: routing_key, options, data }: IPublish<T>) {
@@ -47,18 +51,5 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
       Buffer.from(JSON.stringify(data)),
       { ...options, persistent: true },
     )
-  }
-
-  private async connect() {
-    this.connection = await amqp.connect(config.RABBITMQ_CONNECTION_URL)
-    this.channel = await this.connection.createChannel()
-    await this.channel.assertExchange(config.NOTIFICATION_EXCHANGE, "topic", {
-      durable: true,
-    })
-  }
-
-  private async disconnect() {
-    await this.channel.close()
-    await this.connection.close()
   }
 }

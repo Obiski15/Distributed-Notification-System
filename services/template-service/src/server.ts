@@ -3,6 +3,7 @@ import {
   deregister_consul_service,
   register_consul_service,
 } from "@shared/utils/consul.js"
+import { setup_graceful_shutdown } from "@shared/utils/graceful-shutdown.js"
 import logger from "@shared/utils/logger.js"
 import app from "./app.js"
 
@@ -12,19 +13,6 @@ const consul_config = {
   consul_host: config.CONSUL_HOST,
   consul_port: config.CONSUL_PORT,
 }
-
-// Handle graceful shutdown
-const graceful_shutdown = async (signal: string) => {
-  logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
-
-  await deregister_consul_service(consul_config)
-  await app.close()
-
-  process.exit(0)
-}
-
-process.on("SIGINT", () => void graceful_shutdown("SIGINT"))
-process.on("SIGTERM", () => void graceful_shutdown("SIGTERM"))
 
 const start = async () => {
   try {
@@ -36,6 +24,22 @@ const start = async () => {
     )
 
     await register_consul_service(consul_config)
+
+    // Setup graceful shutdown
+    setup_graceful_shutdown([
+      {
+        cleanup: async () => {
+          await deregister_consul_service(consul_config)
+        },
+        timeout: 5000,
+      },
+      {
+        cleanup: async () => {
+          await app.close()
+        },
+        timeout: 10000,
+      },
+    ])
   } catch (err) {
     logger.error(err)
     process.exit(1)
