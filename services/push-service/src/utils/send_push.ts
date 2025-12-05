@@ -4,11 +4,11 @@ import logger from "@shared/utils/logger.js"
 import admin from "firebase-admin"
 
 // Initialize Firebase Admin SDK
-let firebaseApp: admin.app.App | null = null
+let firebase_app: admin.app.App | null = null
 
-function initializeFirebase(): admin.app.App {
-  if (!firebaseApp) {
-    firebaseApp = admin.initializeApp({
+function initialize_firebase(): admin.app.App {
+  if (!firebase_app) {
+    firebase_app = admin.initializeApp({
       credential: admin.credential.cert({
         projectId: config.FCM_PROJECT_ID,
         clientEmail: config.FCM_CLIENT_EMAIL,
@@ -16,7 +16,7 @@ function initializeFirebase(): admin.app.App {
       }),
     })
   }
-  return firebaseApp
+  return firebase_app
 }
 
 interface PushNotificationPayload {
@@ -38,8 +38,8 @@ interface PushNotificationResult {
 
 async function send_push_notification(payload: PushNotificationPayload) {
   try {
-    const firebaseApp = initializeFirebase()
-    const messaging = firebaseApp.messaging()
+    const firebase_app = initialize_firebase()
+    const messaging = firebase_app.messaging()
 
     const message: admin.messaging.Message = {
       token: payload.token,
@@ -98,8 +98,8 @@ async function send_push_notification(payload: PushNotificationPayload) {
 
 async function validate_device_token(token: string): Promise<boolean> {
   try {
-    const firebaseApp = initializeFirebase()
-    const messaging = firebaseApp.messaging()
+    const firebase_app = initialize_firebase()
+    const messaging = firebase_app.messaging()
 
     // Send a test message with dry run to validate token
     await messaging.send(

@@ -18,8 +18,8 @@ export class Fetch {
     this.request = request
   }
 
-  async fetch(serviceName: string) {
-    const targetUrl = `http://${
+  async fetch_service(service_name: string) {
+    const target_url = `http://${
       this.service.ServiceAddress || this.service.Address
     }:${this.service.ServicePort}${this.request.url}`
 
@@ -28,13 +28,13 @@ export class Fetch {
         firstValueFrom(
           this.httpService.request({
             method: this.request.method,
-            url: targetUrl,
+            url: target_url,
             data: this.request.body,
             headers: this.request.headers,
             params: this.request.query,
           }),
         ),
-      serviceName,
+      service_name,
     ).fire()
 
     return res.data as Record<string, unknown>

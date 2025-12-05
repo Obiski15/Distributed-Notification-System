@@ -40,25 +40,25 @@ export class AuthModel extends BaseModel {
         code: ERROR_CODES.VALIDATION_ERROR,
       })
 
-    const existingUser = await this.find_by_email(data.email)
+    const existing_user = await this.find_by_email(data.email)
 
-    if (existingUser)
+    if (existing_user)
       throw new AppError({
         message: SYS_MESSAGES.USER_ALREADY_EXISTS,
         status_code: STATUS_CODES.CONFLICT,
         code: ERROR_CODES.USER_ALREADY_EXISTS,
       })
 
-    const hashedPassword = await this.hashPassword(data.password)
+    const hashed_password = await this.hash_password(data.password)
 
     await this.fastify.mysql.query<ResultSetHeader>(
       "INSERT INTO users (email, password, name) VALUES (?, ?, ?)",
-      [data.email, hashedPassword, data.name],
+      [data.email, hashed_password, data.name],
     )
 
     const user = await this.find_by_email(data.email)
 
-    const tokens = this.generateTokens(user)
+    const tokens = this.generate_tokens(user)
 
     return {
       user: {
@@ -84,11 +84,11 @@ export class AuthModel extends BaseModel {
       })
 
     // Compare password
-    const isPasswordValid = await this.comparePassword(
+    const is_password_valid = await this.compare_password(
       data.password,
       user.password,
     )
-    if (!isPasswordValid)
+    if (!is_password_valid)
       throw new AppError({
         message: SYS_MESSAGES.INVALID_CREDENTIALS,
         status_code: STATUS_CODES.BAD_REQUEST,
@@ -96,7 +96,7 @@ export class AuthModel extends BaseModel {
       })
 
     // Remove password from user object
-    const userWithoutPassword: UserWithoutPassword = {
+    const user_without_password: UserWithoutPassword = {
       id: user.id,
       email: user.email,
       name: user.name,
@@ -105,33 +105,33 @@ export class AuthModel extends BaseModel {
     }
 
     // Generate tokens
-    const tokens = this.generateTokens(userWithoutPassword)
+    const tokens = this.generate_tokens(user_without_password)
 
     return {
       user: {
-        id: userWithoutPassword.id,
-        email: userWithoutPassword.email,
-        name: userWithoutPassword.name,
-        ...(userWithoutPassword.created_at && {
-          created_at: userWithoutPassword.created_at,
+        id: user_without_password.id,
+        email: user_without_password.email,
+        name: user_without_password.name,
+        ...(user_without_password.created_at && {
+          created_at: user_without_password.created_at,
         }),
-        ...(userWithoutPassword.updated_at && {
-          updated_at: userWithoutPassword.updated_at,
+        ...(user_without_password.updated_at && {
+          updated_at: user_without_password.updated_at,
         }),
       },
       tokens,
     }
   }
 
-  async hashPassword(password: string): Promise<string> {
+  async hash_password(password: string): Promise<string> {
     return bcrypt.hash(password, this.salt_rounds)
   }
 
-  async comparePassword(
+  async compare_password(
     password: string,
-    hashedPassword: string,
+    hashed_password: string,
   ): Promise<boolean> {
-    return bcrypt.compare(password, hashedPassword)
+    return bcrypt.compare(password, hashed_password)
   }
 
   generate_refresh_token(user: UserWithoutPassword): string {
@@ -153,7 +153,7 @@ export class AuthModel extends BaseModel {
     return this.fastify.jwt.access.sign(payload)
   }
 
-  generateTokens(user: UserWithoutPassword) {
+  generate_tokens(user: UserWithoutPassword) {
     return {
       access_token: this.generate_access_token(user),
       refresh_token: this.generate_refresh_token(user),

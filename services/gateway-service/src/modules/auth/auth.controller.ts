@@ -18,8 +18,8 @@ export class AuthController implements OnModuleInit {
   @Public()
   @All("auth*")
   async authRoutes(@Req() request: FastifyRequest) {
-    const fetchService = new Fetch(this.service, request)
-    const data = await fetchService.fetch(config.USER_SERVICE)
+    const fetch_service = new Fetch(this.service, request)
+    const data = await fetch_service.fetch_service(config.USER_SERVICE)
     return data
   }
 }

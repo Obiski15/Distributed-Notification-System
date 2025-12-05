@@ -40,10 +40,10 @@ export class RabbitMQProvider implements OnModuleInit, OnModuleDestroy {
     logger.info("Disconnected from RabbitMQ")
   }
 
-  publish<T>({ routingKey, options, data }: IPublish<T>) {
+  publish<T>({ routingKey: routing_key, options, data }: IPublish<T>) {
     this.channel.publish(
       config.NOTIFICATION_EXCHANGE,
-      routingKey,
+      routing_key,
       Buffer.from(JSON.stringify(data)),
       { ...options, persistent: true },
     )

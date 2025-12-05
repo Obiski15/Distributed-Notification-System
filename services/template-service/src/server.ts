@@ -3,7 +3,7 @@ import logger from "@shared/utils/logger.js"
 import app from "./app.js"
 
 // register consul for dynamic service discovery
-async function registerService() {
+async function register_service() {
   const body = {
     Name: config.TEMPLATE_SERVICE,
     ID: `${config.TEMPLATE_SERVICE}-${config.TEMPLATE_SERVICE_PORT}`,
@@ -30,12 +30,12 @@ async function registerService() {
 }
 
 // Deregister service from Consul on shutdown
-async function deregisterService() {
-  const serviceId = `${config.TEMPLATE_SERVICE}-${config.TEMPLATE_SERVICE_PORT}`
+async function deregister_service() {
+  const service_id = `${config.TEMPLATE_SERVICE}-${config.TEMPLATE_SERVICE_PORT}`
 
   try {
     await fetch(
-      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
+      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${service_id}`,
       { method: "PUT" },
     )
     logger.info(`[${config.TEMPLATE_SERVICE}] Deregistered from Consul`)
@@ -45,17 +45,17 @@ async function deregisterService() {
 }
 
 // Handle graceful shutdown
-const gracefulShutdown = async (signal: string) => {
+const graceful_shutdown = async (signal: string) => {
   logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
-  await deregisterService()
+  await deregister_service()
   await app.close()
 
   process.exit(0)
 }
 
-process.on("SIGINT", () => void gracefulShutdown("SIGINT"))
-process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"))
+process.on("SIGINT", () => void graceful_shutdown("SIGINT"))
+process.on("SIGTERM", () => void graceful_shutdown("SIGTERM"))
 
 const start = async () => {
   try {
@@ -66,7 +66,7 @@ const start = async () => {
       `Template service listening on port ${config.TEMPLATE_SERVICE_PORT}`,
     )
 
-    await registerService()
+    await register_service()
   } catch (err) {
     logger.error(err)
     process.exit(1)

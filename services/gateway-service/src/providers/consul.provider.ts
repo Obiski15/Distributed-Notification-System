@@ -12,7 +12,7 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      await this.registerService()
+      await this.register_service()
       logger.info(
         `✅ [${config.GATEWAY_SERVICE}] Registered with Consul at ${config.CONSUL_HOST}:${config.CONSUL_PORT}`,
       )
@@ -29,11 +29,11 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.deregisterService()
+    await this.deregister_service()
     logger.info(`[${config.GATEWAY_SERVICE}] Deregistered from Consul`)
   }
 
-  public async registerService() {
+  public async register_service() {
     const body = {
       Name: config.GATEWAY_SERVICE,
       ID: `${config.GATEWAY_SERVICE}-${config.GATEWAY_SERVICE_PORT}`,
@@ -55,7 +55,7 @@ export class ConsulProvider implements OnModuleInit, OnModuleDestroy {
     )
   }
 
-  public async deregisterService() {
+  public async deregister_service() {
     await fetch(
       `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${this.service_id}`,
       { method: "PUT" },

@@ -16,8 +16,8 @@ export class TemplateController {
 
   @All("templates*")
   async templateRoutes(@Req() request: FastifyRequest) {
-    const fetchService = new Fetch(this.service, request)
-    const data = await fetchService.fetch(config.TEMPLATE_SERVICE)
+    const fetch_service = new Fetch(this.service, request)
+    const data = await fetch_service.fetch_service(config.TEMPLATE_SERVICE)
 
     return data
   }

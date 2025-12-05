@@ -24,7 +24,7 @@ export class NotificationsController {
   @Post("/")
   @HttpCode(HttpStatus.ACCEPTED)
   queueNotification(@Body() body: CreateNotificationDto) {
-    return this.notificationService.handleNotification(body)
+    return this.notificationService.handle_notification(body)
   }
 
   // Update notification status
@@ -34,13 +34,13 @@ export class NotificationsController {
     @Param("notification_preference") notification_preference: string,
     @Body() body: UpdateNotificationStatusDto,
   ): Promise<NotificationResponse> {
-    return this.notificationService.updateStatus(notification_preference, body)
+    return this.notificationService.update_status(notification_preference, body)
   }
 
   @Get("/:request_id")
   getStatus(
     @Param("request_id") request_id: string,
   ): Promise<NotificationResponse> {
-    return this.notificationService.getStatus(request_id)
+    return this.notificationService.get_status(request_id)
   }
 }

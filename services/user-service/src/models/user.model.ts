@@ -29,13 +29,13 @@ export class UserModel extends BaseModel {
   }
 
   update_user = async (data: UpdateUser, id: string) => {
-    const setClauses: string[] = []
+    const set_clauses: string[] = []
     const values: any[] = []
 
     if (data.email) {
-      const existingUser = await this.find_by_email(data.email)
+      const existing_user = await this.find_by_email(data.email)
 
-      if (existingUser.id !== id)
+      if (existing_user.id !== id)
         throw new AppError({
           message: SYSTEM_MESSAGES.USER_ALREADY_EXISTS,
           status_code: STATUS_CODES.CONFLICT,
@@ -45,12 +45,12 @@ export class UserModel extends BaseModel {
 
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined) {
-        setClauses.push(`${key} = ?`)
+        set_clauses.push(`${key} = ?`)
         values.push(value)
       }
     })
 
-    if (setClauses.length === 0) {
+    if (set_clauses.length === 0) {
       throw new AppError({
         message: SYSTEM_MESSAGES.NO_VALID_UPDATE_FIELDS,
         status_code: STATUS_CODES.BAD_REQUEST,
@@ -61,7 +61,7 @@ export class UserModel extends BaseModel {
     await this.find_by_id(id)
 
     await this.fastify.mysql.query(
-      `UPDATE users SET ${setClauses.join(", ")} WHERE id = ?`,
+      `UPDATE users SET ${set_clauses.join(", ")} WHERE id = ?`,
       [...values, id],
     )
 
@@ -71,27 +71,27 @@ export class UserModel extends BaseModel {
   update_preferences = async (data: UpdatePreferences, id: string) => {
     const user = await this.find_by_id(id)
 
-    const updatedPreferences = { ...user.preferences, ...data.preferences }
+    const updated_preferences = { ...user.preferences, ...data.preferences }
 
     await this.fastify.mysql.query(
       "UPDATE users SET preferences = ? WHERE id = ?",
-      [JSON.stringify(updatedPreferences), id],
+      [JSON.stringify(updated_preferences), id],
     )
   }
 
   push_tokens = async (token: string, id: string) => {
     const user = await this.find_by_id(id)
 
-    const currentTokens = user?.push_tokens || []
+    const current_tokens = user?.push_tokens || []
 
-    if (currentTokens.includes(token))
+    if (current_tokens.includes(token))
       return SYSTEM_MESSAGES.PUSH_TOKEN_ALREADY_EXISTS
 
-    const updatedTokens = [...currentTokens, token]
+    const updated_tokens = [...current_tokens, token]
 
     await this.fastify.mysql.query(
       "UPDATE users SET push_tokens = ? WHERE id = ?",
-      [JSON.stringify(updatedTokens), id],
+      [JSON.stringify(updated_tokens), id],
     )
 
     return SYSTEM_MESSAGES.PUSH_TOKEN_UPDATED

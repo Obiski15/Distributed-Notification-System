@@ -6,20 +6,20 @@ import { send_push_notification } from "./utils/send_push.js"
 
 import { config } from "@shared/config/index.js"
 
-async function connectRabbit() {
+async function connect_rabbit() {
   const connection = await amqp.connect(config.RABBITMQ_CONNECTION_URL)
   const channel = await connection.createChannel()
   logger.info("✅ Connected to RabbitMQ")
   return channel
 }
 
-connectRabbit().catch(err => {
+connect_rabbit().catch(err => {
   logger.error(`❌ RabbitMQ connection failed: ${err.message}`)
   process.exit(1)
 })
 
 // register consul for dynamic service discovery
-async function registerService() {
+async function register_service() {
   const body = {
     Name: config.PUSH_SERVICE,
     ID: `${config.PUSH_SERVICE}-${config.PUSH_SERVICE_PORT}`,
@@ -46,12 +46,12 @@ async function registerService() {
 }
 
 // Deregister service from Consul on shutdown
-async function deregisterService() {
-  const serviceId = `${config.PUSH_SERVICE}-${config.PUSH_SERVICE_PORT}`
+async function deregister_service() {
+  const service_id = `${config.PUSH_SERVICE}-${config.PUSH_SERVICE_PORT}`
 
   try {
     await fetch(
-      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${serviceId}`,
+      `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/agent/service/deregister/${service_id}`,
       { method: "PUT" },
     )
     logger.info(`[${config.PUSH_SERVICE}] Deregistered from Consul`)
@@ -61,17 +61,17 @@ async function deregisterService() {
 }
 
 // Handle graceful shutdown
-const gracefulShutdown = async (signal: string) => {
+const graceful_shutdown = async (signal: string) => {
   logger.info(`\n🛑 Received ${signal}, shutting down gracefully...`)
 
-  await deregisterService()
+  await deregister_service()
   await app.close()
 
   process.exit(0)
 }
 
-process.on("SIGINT", () => void gracefulShutdown("SIGINT"))
-process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"))
+process.on("SIGINT", () => void graceful_shutdown("SIGINT"))
+process.on("SIGTERM", () => void graceful_shutdown("SIGTERM"))
 
 const start = async () => {
   try {
@@ -79,7 +79,7 @@ const start = async () => {
     await consume_queue(send_push_notification)
     logger.info(`Push service listening on port ${config.PUSH_SERVICE_PORT}`)
 
-    await registerService()
+    await register_service()
   } catch (err) {
     logger.error(err)
     process.exit(1)

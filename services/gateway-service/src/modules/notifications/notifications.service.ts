@@ -31,7 +31,7 @@ export class NotificationsService {
     private readonly userService: UserService,
   ) {}
 
-  async handleNotification(payload: CreateNotificationDto) {
+  async handle_notification(payload: CreateNotificationDto) {
     const {
       notification_type,
       template_code,
@@ -44,13 +44,13 @@ export class NotificationsService {
     // find user
     const user = await this.userService.get_user(user_id)
 
-    const prefKey =
+    const pref_key =
       notification_type === NotificationType.EMAIL
         ? "email_notification_enabled"
         : "push_notification_enabled"
     if (
       !user.preferences ||
-      !(user.preferences as Record<string, boolean>)[prefKey]
+      !(user.preferences as Record<string, boolean>)[pref_key]
     ) {
       return {
         success: true,
@@ -63,13 +63,13 @@ export class NotificationsService {
     const existing =
       ((await this.cache.get(key)) as Record<string, unknown> | null) || null
 
-    const activeStatuses = Object.values(NotificationStatus).filter(
+    const active_statuses = Object.values(NotificationStatus).filter(
       status => status !== NotificationStatus.FAILED,
     )
 
     if (existing) {
       if (
-        activeStatuses.includes(
+        active_statuses.includes(
           existing.status as Exclude<
             NotificationStatus,
             NotificationStatus.FAILED
@@ -134,7 +134,7 @@ export class NotificationsService {
     }
   }
 
-  async updateStatus(
+  async update_status(
     notification_type: string,
     body: UpdateNotificationStatusDto,
   ): Promise<NotificationResponse> {
@@ -159,7 +159,7 @@ export class NotificationsService {
     }
   }
 
-  async getStatus(request_id: string): Promise<NotificationResponse> {
+  async get_status(request_id: string): Promise<NotificationResponse> {
     const key = this.notification_key(request_id)
 
     const data = (await this.cache.get(key)) as Record<string, unknown>

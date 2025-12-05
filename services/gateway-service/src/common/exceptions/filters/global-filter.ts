@@ -34,61 +34,61 @@ export class GlobalFilter implements ExceptionFilter {
     const reply = ctx.getResponse<FastifyReply>()
     const request = ctx.getRequest<FastifyRequest>()
 
-    let statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR
+    let status_code: number = HttpStatus.INTERNAL_SERVER_ERROR
     let message: string = SYSTEM_MESSAGES.INTERNAL_SERVER_ERROR
-    let errorCode: string | undefined
+    let error_code: string | undefined
     let details: any
-    let isOperational = false
+    let is_operational = false
 
     // Handle CustomException
     if (exception instanceof CustomException) {
-      const exceptionResponse = exception.getResponse()
-      statusCode = (exceptionResponse as IError).status_code
-      message = (exceptionResponse as IError).message
-      errorCode = (exceptionResponse as IError).code
+      const exception_response = exception.getResponse()
+      status_code = (exception_response as IError).status_code
+      message = (exception_response as IError).message
+      error_code = (exception_response as IError).code
       details =
-        (exceptionResponse as IError).validation ||
-        (exceptionResponse as IError).details
-      isOperational = true
+        (exception_response as IError).validation ||
+        (exception_response as IError).details
+      is_operational = true
     }
     // Handle NestJS HttpException
     else if (exception instanceof HttpException) {
-      statusCode = exception.getStatus()
+      status_code = exception.getStatus()
       const response = exception.getResponse()
       message =
         typeof response === "string"
           ? response
           : (response as any).message || message
-      isOperational = statusCode < 500
+      is_operational = status_code < 500
     }
     // Handle Axios errors from external services
     else if (exception instanceof AxiosError) {
       if (exception.response?.data) {
         // Service returned an error response
-        const axiosData = exception.response.data as IError
-        statusCode =
-          axiosData.status_code || exception.response.status || statusCode
-        message = axiosData.message || message
-        errorCode = axiosData.code
-        details = axiosData.validation || axiosData.details
-        isOperational = true
+        const axios_data = exception.response.data as IError
+        status_code =
+          axios_data.status_code || exception.response.status || status_code
+        message = axios_data.message || message
+        error_code = axios_data.code
+        details = axios_data.validation || axios_data.details
+        is_operational = true
       } else if (
         exception.code === "ECONNREFUSED" ||
         exception.code === "ETIMEDOUT"
       ) {
         // Network/connection errors
-        statusCode = HttpStatus.SERVICE_UNAVAILABLE
+        status_code = HttpStatus.SERVICE_UNAVAILABLE
         message = SYSTEM_MESSAGES.SERVICE_UNAVAILABLE
-        errorCode = "SERVICE_UNAVAILABLE"
+        error_code = "SERVICE_UNAVAILABLE"
         details = `Service connection failed: ${exception.message}`
-        isOperational = true
+        is_operational = true
       } else {
         // Other axios errors (e.g., request setup errors)
-        statusCode = HttpStatus.BAD_GATEWAY
+        status_code = HttpStatus.BAD_GATEWAY
         message = SYSTEM_MESSAGES.BAD_GATEWAY
-        errorCode = ERROR_CODES.SERVICE_UNAVAILABLE
+        error_code = ERROR_CODES.SERVICE_UNAVAILABLE
         details = exception.message
-        isOperational = true
+        is_operational = true
       }
     }
 
@@ -96,32 +96,32 @@ export class GlobalFilter implements ExceptionFilter {
       exception instanceof Error ? exception.stack : undefined
 
     // Structured error logging with context
-    const errorContext = {
+    const error_context = {
       message,
-      statusCode,
-      isOperational,
-      errorCode,
+      status_code,
+      is_operational,
+      error_code,
       path: request.url,
       method: request.method,
-      requestId: request.id,
-      userId: (request as any).user?.id,
-      exceptionType: exception?.constructor?.name,
+      request_id: request.id,
+      user_id: (request as any).user?.id,
+      exception_type: exception?.constructor?.name,
       stack,
     }
 
     // Log based on severity
-    if (statusCode >= 500) {
-      logger.error(errorContext, "Server Error")
-    } else if (statusCode >= 400) {
-      logger.warn(errorContext, "Client Error")
+    if (status_code >= 500) {
+      logger.error(error_context, "Server Error")
+    } else if (status_code >= 400) {
+      logger.warn(error_context, "Client Error")
     } else {
-      logger.info(errorContext, "Error")
+      logger.info(error_context, "Error")
     }
 
     // Build error response
-    const errorResponse: ErrorResponse = {
+    const error_response: ErrorResponse = {
       success: false,
-      status_code: statusCode,
+      status_code: status_code,
       message,
       timestamp: new Date().toISOString(),
       path: request.url,
@@ -129,20 +129,20 @@ export class GlobalFilter implements ExceptionFilter {
     }
 
     // Add error code if available
-    if (errorCode) {
-      errorResponse.error_code = errorCode
+    if (error_code) {
+      error_response.error_code = error_code
     }
 
     // Add details if available
     if (details) {
-      errorResponse.details = details
+      error_response.details = details
     }
 
     // Include stack trace in development for non-operational errors
-    if (config.isDev && !isOperational && stack) {
-      errorResponse.stack = stack
+    if (config.isDev && !is_operational && stack) {
+      error_response.stack = stack
     }
 
-    reply.status(statusCode).send(errorResponse)
+    reply.status(status_code).send(error_response)
   }
 }

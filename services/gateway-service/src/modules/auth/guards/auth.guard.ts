@@ -27,35 +27,35 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const handler = context.getHandler()
-    const classRef = context.getClass()
+    const class_ref = context.getClass()
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>()
 
     // Check if the route is marked as Public
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+    const is_public = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       handler,
-      classRef,
+      class_ref,
     ])
-    if (isPublic) return true
+    if (is_public) return true
 
     // INTERNAL BYPASS CHECK
-    const allowInternal = this.reflector.getAllAndOverride<boolean>(
+    const allow_internal = this.reflector.getAllAndOverride<boolean>(
       IS_INTERNAL_KEY,
-      [handler, classRef],
+      [handler, class_ref],
     )
 
-    if (allowInternal) {
-      const internalHeader = request.headers["x-internal-secret"]
-      if (internalHeader === config.INTERNAL_SERVICE_SECRET) {
+    if (allow_internal) {
+      const internal_header = request.headers["x-internal-secret"]
+      if (internal_header === config.INTERNAL_SERVICE_SECRET) {
         return true
       }
     }
 
-    if (isPublic) {
+    if (is_public) {
       return true
     }
 
     // extract request
-    const token = this.extractTokenFromHeader(request)
+    const token = this.extract_token_from_header(request)
 
     if (!token) {
       throw new UnauthorizedException(SYSTEM_MESSAGES.MISSING_AUTH_TOKEN)
@@ -78,7 +78,9 @@ export class AuthGuard implements CanActivate {
     return true
   }
 
-  private extractTokenFromHeader(request: FastifyRequest): string | undefined {
+  private extract_token_from_header(
+    request: FastifyRequest,
+  ): string | undefined {
     const [type, token] = request.headers.authorization?.split(" ") ?? []
     return type === "Bearer" ? token : undefined
   }

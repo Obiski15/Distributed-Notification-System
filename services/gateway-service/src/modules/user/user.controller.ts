@@ -22,8 +22,8 @@ export class UserController implements OnModuleInit {
 
   @All("users*")
   async userRoutes(@Req() request: AuthenticatedRequest) {
-    const fetchService = new Fetch(this.service, request)
-    const data = await fetchService.fetch(config.USER_SERVICE)
+    const fetch_service = new Fetch(this.service, request)
+    const data = await fetch_service.fetch_service(config.USER_SERVICE)
 
     if (request.method !== "GET")
       await this.cache.del(`user:${request.user.id}`)

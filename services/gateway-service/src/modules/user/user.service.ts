@@ -21,15 +21,15 @@ export class UserService implements OnModuleInit {
   }
 
   async get_user(id: string) {
-    const cacheKey = `user:${id}`
+    const cache_key = `user:${id}`
 
-    const cachedStatus = (await this.cache.get(cacheKey)) as IUser
+    const cached_status = (await this.cache.get(cache_key)) as IUser
 
-    if (cachedStatus !== undefined && cachedStatus !== null) {
-      return cachedStatus
+    if (cached_status !== undefined && cached_status !== null) {
+      return cached_status
     }
 
-    const targetUrl = `http://${
+    const target_url = `http://${
       this.service.ServiceAddress || this.service.Address
     }:${this.service.ServicePort}/api/v1/users`
 
@@ -37,7 +37,7 @@ export class UserService implements OnModuleInit {
       () =>
         firstValueFrom(
           this.httpService.request({
-            url: targetUrl,
+            url: target_url,
             method: "GET",
             headers: {
               "x-user-id": id,
@@ -47,7 +47,7 @@ export class UserService implements OnModuleInit {
       config.USER_SERVICE,
     ).fire()
 
-    await this.cache.set(cacheKey, res.data.data, 3000)
+    await this.cache.set(cache_key, res.data.data, 3000)
 
     return res.data.data
   }

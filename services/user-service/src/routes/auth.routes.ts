@@ -7,7 +7,7 @@ import { login_schema, register_schema } from "../schemas/auth.schema.js"
 
 // eslint-disable-next-line
 const auth_routes = async (fastify: FastifyInstance) => {
-  const authModel = new AuthModel(fastify)
+  const auth_model = new AuthModel(fastify)
 
   fastify.post<{ Body: Register }>(
     "/register",
@@ -15,7 +15,7 @@ const auth_routes = async (fastify: FastifyInstance) => {
       schema: register_schema,
     },
     async (request, reply) => {
-      const data = await authModel.register(request.body)
+      const data = await auth_model.register(request.body)
 
       return reply.status(STATUS_CODES.CREATED).send({
         success: true,
@@ -31,7 +31,7 @@ const auth_routes = async (fastify: FastifyInstance) => {
       schema: login_schema,
     },
     async (request, reply) => {
-      const data = await authModel.login(request.body)
+      const data = await auth_model.login(request.body)
 
       return reply.status(STATUS_CODES.OK).send({
         success: true,
