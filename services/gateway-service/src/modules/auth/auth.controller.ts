@@ -4,9 +4,12 @@ import discover_service from "@dns/shared/utils/discover_service"
 import { All, Controller, OnModuleInit, Req } from "@nestjs/common"
 import { FastifyRequest } from "fastify"
 
+import { Throttle } from "@nestjs/throttler"
 import { Fetch } from "../../common/fetch"
+import { AUTH_LIMIT } from "../../config/throttler.config"
 import { Public } from "../../decorators/public.decorator"
 
+@Throttle({ default: AUTH_LIMIT })
 @Controller()
 export class AuthController implements OnModuleInit {
   private service: Service

@@ -8,6 +8,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from "@nestjs/platform-fastify"
+import helmet from "helmet"
 import { AppModule } from "./app.module"
 
 // import { SwaggerGateway } from "./swagger/swaggerService"
@@ -18,6 +19,8 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   )
+
+  app.use(helmet())
 
   app.enableCors({
     credentials: true,

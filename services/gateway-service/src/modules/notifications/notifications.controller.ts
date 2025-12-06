@@ -7,6 +7,8 @@ import {
   Param,
   Post,
 } from "@nestjs/common"
+import { Throttle } from "@nestjs/throttler"
+import { SENSITIVE_LIMIT } from "../../config/throttler.config"
 import { AllowInternal } from "../../decorators/isInternal.decorator"
 import { UpdateNotificationStatusDto } from "./dto/notification-status.dto"
 import { CreateNotificationDto } from "./dto/notification.dto"
@@ -21,13 +23,15 @@ export class NotificationsController {
   constructor(private readonly notificationService: NotificationsService) {}
 
   // Queue notifications
-  @Post("/")
+  @Throttle({ default: SENSITIVE_LIMIT })
+  @Post("/send")
   @HttpCode(HttpStatus.ACCEPTED)
   queueNotification(@Body() body: CreateNotificationDto) {
     return this.notificationService.handle_notification(body)
   }
 
   // Update notification status
+  @Throttle({ default: SENSITIVE_LIMIT })
   @Post("/:notification_preference/status")
   @HttpCode(HttpStatus.CREATED)
   updateStatus(
