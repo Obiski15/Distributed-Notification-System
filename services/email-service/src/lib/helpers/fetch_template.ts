@@ -11,7 +11,7 @@ interface Template {
   subject: string
 }
 
-export const fetch_template = async (template_code: string) => {
+export const fetch_template = (template_code: string) => {
   const template = circuit_breaker<Template>(async () => {
     try {
       const service = await discover_service(config.TEMPLATE_SERVICE)
