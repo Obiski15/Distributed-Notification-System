@@ -5,7 +5,7 @@
 // import merge from "lodash.merge"
 // import * as CircuitBreaker from "opossum"
 // import { lastValueFrom } from "rxjs"
-// import logger from "@shared/utils/logger"
+// import logger from "@dns/shared/utils/logger"
 
 // interface MicroserviceSpec {
 //   name: string

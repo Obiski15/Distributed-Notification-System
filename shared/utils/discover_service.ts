@@ -1,7 +1,7 @@
 import axios from "axios"
-import { config } from "../config/index"
-import type { Service } from "../types"
-import circuit_breaker from "./circuit_breaker"
+import { config } from "../config/index.js"
+import type { Service } from "../types/index.js"
+import circuit_breaker from "./circuit_breaker.js"
 
 const discover_service = async (serviceName: string): Promise<Service> => {
   const breaker = circuit_breaker<Service>(async () => {
@@ -9,7 +9,7 @@ const discover_service = async (serviceName: string): Promise<Service> => {
       `http://${config.CONSUL_HOST}:${config.CONSUL_PORT}/v1/catalog/service/${serviceName}`,
     )
 
-    if (!(res.status !== 200)) {
+    if (res.status !== 200) {
       throw new Error(
         `Consul lookup failed for '${serviceName}': ${res.status} ${res.statusText}`,
       )

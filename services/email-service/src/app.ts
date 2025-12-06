@@ -2,11 +2,11 @@ import Fastify from "fastify"
 
 const app = Fastify({ logger: false })
 
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
-import { logging_middleware } from "@shared/middleware/logging.middleware.js"
-import health_schema from "@shared/schemas/health-schema.js"
-import error_handler from "@shared/utils/error_handler.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
+import { logging_middleware } from "@dns/shared/middleware/logging.middleware.js"
+import health_schema from "@dns/shared/schemas/health-schema.js"
+import error_handler from "@dns/shared/utils/error_handler.js"
 
 // Add logging middleware
 app.addHook("onRequest", logging_middleware)

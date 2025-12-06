@@ -1,3 +1,5 @@
+import { config } from "@dns/shared/config/index"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
 import {
   CanActivate,
   ExecutionContext,
@@ -6,8 +8,6 @@ import {
 } from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
 import { JwtService } from "@nestjs/jwt"
-import { config } from "@shared/config/index"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
 import { FastifyRequest } from "fastify"
 import { IS_INTERNAL_KEY } from "../../../decorators/isInternal.decorator"
 import { IS_PUBLIC_KEY } from "../../../decorators/public.decorator"

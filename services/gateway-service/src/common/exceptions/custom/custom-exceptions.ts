@@ -1,5 +1,5 @@
+import type { IError } from "@dns/shared/types"
 import { HttpException } from "@nestjs/common"
-import type { IError } from "@shared/types"
 
 interface CustomExceptionOptions {
   message: string

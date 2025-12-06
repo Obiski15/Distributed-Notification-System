@@ -1,5 +1,5 @@
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
 import type { FastifyInstance } from "fastify"
 
 import { AuthModel } from "../models/auth.model.js"

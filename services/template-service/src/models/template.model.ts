@@ -1,7 +1,7 @@
+import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import AppError from "@dns/shared/utils/AppError.js"
 import type { ResultSetHeader, RowDataPacket } from "@fastify/mysql"
-import * as ERROR_CODES from "@shared/constants/error-codes.js"
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import AppError from "@shared/utils/AppError.js"
 import { type FastifyInstance } from "fastify"
 
 export interface Template extends RowDataPacket {

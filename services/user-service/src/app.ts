@@ -4,15 +4,15 @@ import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
 
-import { config } from "@shared/config/index.js"
-import error_handler from "@shared/utils/error_handler.js"
+import { config } from "@dns/shared/config/index.js"
+import error_handler from "@dns/shared/utils/error_handler.js"
 import auth_routes from "./routes/auth.routes.js"
 import user_route from "./routes/user.routes.js"
 
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
-import { logging_middleware } from "@shared/middleware/logging.middleware.js"
-import health_schema from "@shared/schemas/health-schema.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
+import { logging_middleware } from "@dns/shared/middleware/logging.middleware.js"
+import health_schema from "@dns/shared/schemas/health-schema.js"
 
 const app = Fastify({
   logger: { level: "error" },

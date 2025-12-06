@@ -5,9 +5,8 @@
     "moduleResolution": "Bundler",
     "outDir": "./dist",
     "rootDir": "./src",
-
     "paths": {
-      "@shared/*": ["../../shared/*"]
+      "@dns/shared/*": ["../../shared/dist/*", "../../shared/*"]
     }
   },
   "include": ["src/**/*"]

@@ -1,10 +1,10 @@
-import { config } from "@shared/config/index.js"
+import { config } from "@dns/shared/config/index.js"
 import {
   deregister_consul_service,
   register_consul_service,
-} from "@shared/utils/consul.js"
-import { setup_graceful_shutdown } from "@shared/utils/graceful-shutdown.js"
-import logger from "@shared/utils/logger.js"
+} from "@dns/shared/utils/consul.js"
+import { setup_graceful_shutdown } from "@dns/shared/utils/graceful-shutdown.js"
+import logger from "@dns/shared/utils/logger.js"
 import app from "./app.js"
 
 const consul_config = {

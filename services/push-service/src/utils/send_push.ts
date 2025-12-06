@@ -1,6 +1,6 @@
-import { config } from "@shared/config/index.js"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
-import logger from "@shared/utils/logger.js"
+import { config } from "@dns/shared/config/index.js"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
+import logger from "@dns/shared/utils/logger.js"
 import admin from "firebase-admin"
 
 // Initialize Firebase Admin SDK

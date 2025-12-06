@@ -3,11 +3,11 @@ import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
 
-import { config } from "@shared/config/index.js"
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
-import { logging_middleware } from "@shared/middleware/logging.middleware.js"
-import error_handler from "@shared/utils/error_handler.js"
+import { config } from "@dns/shared/config/index.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
+import { logging_middleware } from "@dns/shared/middleware/logging.middleware.js"
+import error_handler from "@dns/shared/utils/error_handler.js"
 
 import template_routes from "./routes/template_route.js"
 

@@ -1,4 +1,4 @@
-import error_response_schema from "./error-response-schema"
+import error_response_schema from "./error-response-schema.js"
 
 const health_schema = {
   description: "Check if the user service is healthy.",

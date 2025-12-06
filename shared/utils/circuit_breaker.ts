@@ -1,7 +1,7 @@
 import CircuitBreaker from "opossum"
 
-import { config } from "../config/index"
-import logger from "./logger"
+import { config } from "../config/index.js"
+import logger from "./logger.js"
 
 export const breaker_listeners = <T>(
   breaker: CircuitBreaker<[], T>,

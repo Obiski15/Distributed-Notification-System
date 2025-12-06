@@ -1,11 +1,11 @@
-import { config } from "@shared/config/index.js"
-import * as ERROR_CODES from "@shared/constants/error-codes.js"
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import AppError from "@shared/utils/AppError.js"
-import circuit_breaker from "@shared/utils/circuit_breaker.js"
+import { config } from "@dns/shared/config/index.js"
+import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import AppError from "@dns/shared/utils/AppError.js"
+import circuit_breaker from "@dns/shared/utils/circuit_breaker.js"
 import axios, { AxiosError } from "axios"
 
-import discover_service from "@shared/utils/discover_service.js"
+import discover_service from "@dns/shared/utils/discover_service.js"
 interface Template {
   body: string
   subject: string

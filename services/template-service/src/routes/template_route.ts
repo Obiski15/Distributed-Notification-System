@@ -1,5 +1,5 @@
-import * as statusCodes from "@shared/constants/status-codes.js"
-import * as sysMsg from "@shared/constants/system-message.js"
+import * as statusCodes from "@dns/shared/constants/status-codes.js"
+import * as sysMsg from "@dns/shared/constants/system-message.js"
 import { type FastifyInstance } from "fastify"
 
 import {

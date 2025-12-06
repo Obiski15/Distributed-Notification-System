@@ -1,7 +1,7 @@
+import { config } from "@dns/shared/config/index"
+import type { Service } from "@dns/shared/types/index"
+import discover_service from "@dns/shared/utils/discover_service"
 import { All, Controller, Req } from "@nestjs/common"
-import { config } from "@shared/config/index"
-import type { Service } from "@shared/types/index"
-import discover_service from "@shared/utils/discover_service"
 import { FastifyRequest } from "fastify"
 
 import { Fetch } from "../../common/fetch"

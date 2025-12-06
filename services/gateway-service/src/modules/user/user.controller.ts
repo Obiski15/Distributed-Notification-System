@@ -1,10 +1,10 @@
+import { config } from "@dns/shared/config/index"
+import type { Service } from "@dns/shared/types/index"
 import { All, Controller, Inject, OnModuleInit, Req } from "@nestjs/common"
-import { config } from "@shared/config/index"
-import type { Service } from "@shared/types/index"
 import { FastifyRequest } from "fastify"
 
+import discover_service from "@dns/shared/utils/discover_service"
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager"
-import discover_service from "@shared/utils/discover_service"
 import { Fetch } from "../../common/fetch"
 
 interface AuthenticatedRequest extends FastifyRequest {

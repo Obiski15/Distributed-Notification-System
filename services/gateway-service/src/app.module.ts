@@ -1,12 +1,12 @@
-import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common"
-import { APP_FILTER, APP_GUARD } from "@nestjs/core"
+import { Module } from "@nestjs/common"
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core"
 
 import { GlobalFilter } from "./common/exceptions/filters/global-filter"
-import { LoggingMiddleware } from "./common/middleware/logging.middleware"
+import { LoggingInterceptor } from "./common/interceptors/logging.interceptor"
 
+import { config } from "@dns/shared/config/index"
 import { CacheModule } from "@nestjs/cache-manager"
 import { JwtModule } from "@nestjs/jwt"
-import { config } from "@shared/config/index"
 import { redisStore } from "cache-manager-redis-store"
 
 import { AuthController } from "./modules/auth/auth.controller"
@@ -40,7 +40,10 @@ import { UserModule } from "./modules/user/user.module"
   ],
   controllers: [AuthController, TemplateController],
   providers: [
-    LoggingMiddleware,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
     {
       provide: APP_FILTER,
       useClass: GlobalFilter,
@@ -51,8 +54,4 @@ import { UserModule } from "./modules/user/user.module"
     },
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggingMiddleware).forRoutes("*")
-  }
-}
+export class AppModule {}

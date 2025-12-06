@@ -1,5 +1,5 @@
-import base_response from "@shared/schemas/base-response.js"
-import error_response_schema from "@shared/schemas/error-response-schema.js"
+import base_response from "@dns/shared/schemas/base-response.js"
+import error_response_schema from "@dns/shared/schemas/error-response-schema.js"
 
 const userObject = {
   type: "object",

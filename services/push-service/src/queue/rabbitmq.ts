@@ -4,12 +4,12 @@ import {
   type PushNotificationPayload,
 } from "../utils/send_push.js"
 
-import { config } from "@shared/config/index.js"
-import logger from "@shared/utils/logger.js"
+import { config } from "@dns/shared/config/index.js"
+import logger from "@dns/shared/utils/logger.js"
 import {
   close_rabbitmq_connection,
   get_rabbitmq_channel,
-} from "@shared/utils/rabbitmq.js"
+} from "@dns/shared/utils/rabbitmq.js"
 
 export const get_channel = () =>
   get_rabbitmq_channel(config.RABBITMQ_CONNECTION_URL)

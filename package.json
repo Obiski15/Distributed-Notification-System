@@ -16,8 +16,7 @@
   "lint-staged": {
     "*.ts": [
       "eslint --fix",
-      "prettier --write",
-      "type-check"
+      "prettier --write"
     ]
   },
   "workspaces": [

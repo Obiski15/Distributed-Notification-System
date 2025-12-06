@@ -15,7 +15,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "dependencies": {
-    "@shared": "workspace:*",
+    "@dns/shared": "workspace:*",
     "mustache": "^4.2.0",
     "nodemailer": "^7.0.10"
   },

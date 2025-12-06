@@ -15,7 +15,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.20.0",
   "dependencies": {
-    "@shared": "workspace:*",
+    "@dns/shared": "workspace:*",
     "firebase-admin": "^12.0.0"
   }
 }

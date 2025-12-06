@@ -12,7 +12,7 @@
     "incremental": true,
 
     "paths": {
-      "@shared/*": ["../../shared/*"]
+      "@dns/shared/*": ["../../shared/*"]
     }
   },
   "include": ["src/**/*"]

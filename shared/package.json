@@ -1,7 +1,21 @@
 {
-  "name": "@shared",
+  "name": "@dns/shared",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.ts",
-  "private": true
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*"
+    }
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc"
+  }
 }

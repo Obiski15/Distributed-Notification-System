@@ -1,11 +1,11 @@
+import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import * as SYS_MESSAGES from "@dns/shared/constants/system-message.js"
 import { RowDataPacket } from "@fastify/mysql"
-import * as ERROR_CODES from "@shared/constants/error-codes.js"
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import * as SYS_MESSAGES from "@shared/constants/system-message.js"
 
 import { FastifyInstance } from "fastify"
 
-import AppError from "@shared/utils/AppError.js"
+import AppError from "@dns/shared/utils/AppError.js"
 
 interface User extends RowDataPacket {
   id: string

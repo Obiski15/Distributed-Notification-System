@@ -1,17 +1,17 @@
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
+import { setup_graceful_shutdown } from "@dns/shared/utils/graceful-shutdown"
+import logger from "@dns/shared/utils/logger"
 import { ValidationPipe } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from "@nestjs/platform-fastify"
-import * as STATUS_CODES from "@shared/constants/status-codes"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
-import { setup_graceful_shutdown } from "@shared/utils/graceful-shutdown"
-import logger from "@shared/utils/logger"
 import { AppModule } from "./app.module"
 
 // import { SwaggerGateway } from "./swagger/swaggerService"
-import { config } from "@shared/config/index"
+import { config } from "@dns/shared/config/index"
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(

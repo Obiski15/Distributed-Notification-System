@@ -1,9 +1,9 @@
 import { FastifyInstance, FastifyRequest } from "fastify"
 
-import * as ERROR_CODES from "@shared/constants/error-codes.js"
-import * as STATUS_CODES from "@shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message.js"
-import AppError from "@shared/utils/AppError.js"
+import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
+import AppError from "@dns/shared/utils/AppError.js"
 
 import { UserModel } from "../models/user.model.js"
 import {

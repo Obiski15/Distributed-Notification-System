@@ -1,3 +1,6 @@
+import * as ERROR_CODES from "@dns/shared/constants/error-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
+import type { IError } from "@dns/shared/types"
 import {
   ArgumentsHost,
   Catch,
@@ -5,15 +8,12 @@ import {
   HttpException,
   HttpStatus,
 } from "@nestjs/common"
-import * as ERROR_CODES from "@shared/constants/error-codes"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
-import type { IError } from "@shared/types"
 import { AxiosError } from "axios"
 import { FastifyReply, FastifyRequest } from "fastify"
 import { CustomException } from "../custom/custom-exceptions"
 
-import { config } from "@shared/config/index"
-import logger from "@shared/utils/logger"
+import { config } from "@dns/shared/config/index"
+import logger from "@dns/shared/utils/logger"
 
 interface ErrorResponse {
   success: false

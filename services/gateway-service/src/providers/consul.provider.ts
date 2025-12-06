@@ -1,13 +1,13 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
-import { config } from "@shared/config/index"
-import * as ERROR_CODES from "@shared/constants/error-codes"
-import * as STATUS_CODES from "@shared/constants/status-codes"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
+import { config } from "@dns/shared/config/index"
+import * as ERROR_CODES from "@dns/shared/constants/error-codes"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
 import {
   deregister_consul_service,
   register_consul_service,
-} from "@shared/utils/consul"
-import logger from "@shared/utils/logger"
+} from "@dns/shared/utils/consul"
+import logger from "@dns/shared/utils/logger"
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 
 @Injectable()

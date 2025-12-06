@@ -83,7 +83,7 @@ services:
   gateway-service:
     build:
       context: ./
-      dockerfile: ./services/gateway-service/Dockerfile
+      dockerfile: services/gateway-service/Dockerfile
     container_name: dns-gateway
     ports:
       - "3000:3000"
@@ -103,7 +103,7 @@ services:
   email-service:
     build:
       context: ./
-      dockerfile: ./services/email-service/Dockerfile
+      dockerfile: services/email-service/Dockerfile
     container_name: dns-email-service
     ports:
       - "3001:3001"
@@ -121,7 +121,7 @@ services:
   template-service:
     build:
       context: ./
-      dockerfile: ./services/template-service/Dockerfile
+      dockerfile: services/template-service/Dockerfile
     container_name: dns-template-service
     ports:
       - "3002:3002"
@@ -139,7 +139,7 @@ services:
   push-service:
     build:
       context: ./
-      dockerfile: ./services/push-service/Dockerfile
+      dockerfile: services/push-service/Dockerfile
     container_name: dns-push-service
     ports:
       - "3003:3003"
@@ -159,7 +159,7 @@ services:
   user-service:
     build:
       context: ./
-      dockerfile: ./services/user-service/Dockerfile
+      dockerfile: services/user-service/Dockerfile
     container_name: dns-user-service
     ports:
       - "3004:3004"

@@ -1,13 +1,13 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
-import { config } from "@shared/config/index"
-import * as ERROR_CODES from "@shared/constants/error-codes"
-import * as STATUS_CODES from "@shared/constants/status-codes"
-import * as SYSTEM_MESSAGES from "@shared/constants/system-message"
-import logger from "@shared/utils/logger"
+import { config } from "@dns/shared/config/index"
+import * as ERROR_CODES from "@dns/shared/constants/error-codes"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
+import logger from "@dns/shared/utils/logger"
 import {
   close_rabbitmq_connection,
   get_rabbitmq_channel,
-} from "@shared/utils/rabbitmq"
+} from "@dns/shared/utils/rabbitmq"
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import * as amqp from "amqplib"
 import { CustomException } from "../common/exceptions/custom/custom-exceptions"
 

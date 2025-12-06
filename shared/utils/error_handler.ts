@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import * as STATUS_CODES from "../constants/status-codes"
-import * as SYSTEM_MESSAGES from "../constants/system-message"
-import type { IError } from "../types"
-import logger from "./logger"
+import * as STATUS_CODES from "../constants/status-codes.js"
+import * as SYSTEM_MESSAGES from "../constants/system-message.js"
+import type { IError } from "../types/index.js"
+import logger from "./logger.js"
 
 interface ErrorResponse {
   success: false
