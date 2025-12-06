@@ -34,6 +34,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared package
+        run: pnpm --filter @dns/shared run build
+
       - name: Run ESLint
         run: pnpm run lint
 
@@ -41,7 +44,7 @@ jobs:
         run: pnpm exec prettier --check "**/*.{ts,js,json,yml,yaml}"
 
       - name: Type check
-        run: pnpm run type-check || echo "Add type-check script to package.json"
+        run: pnpm run type-check
 
   # Job 2: Build Docker Images
   build:

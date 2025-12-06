@@ -8,6 +8,7 @@ RUN npm install -g pnpm@10.20.0
 
 WORKDIR /app
 
+
 # Copy Workspace Configs
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
 
