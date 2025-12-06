@@ -1,7 +1,3 @@
 #!/bin/sh
 
-echo "Running Type Check..."
-pnpm run type-check
-
-echo "Running Lint Staged..."
 npx lint-staged

@@ -65,7 +65,12 @@ export class UserModel extends BaseModel {
       [...values, id],
     )
 
-    await this.fastify.mysql.query("SELECT * FROM users WHERE id = ?", [id])
+    const [[updatedUser]] = await this.fastify.mysql.query<User[]>(
+      "SELECT * FROM users WHERE id = ?",
+      [id],
+    )
+
+    return updatedUser as UserWithoutPassword
   }
 
   update_preferences = async (data: UpdatePreferences, id: string) => {

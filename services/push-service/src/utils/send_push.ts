@@ -92,7 +92,7 @@ async function send_push_notification(payload: PushNotificationPayload) {
     } else if (typeof error === "string") {
       errorMessage = error
     }
-    logger.error(`FCM send error: ${errorMessage ?? (error as Error)}`)
+    logger.error(`FCM send error: ${errorMessage ?? "Unknown error"}`)
   }
 }
 
