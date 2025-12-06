@@ -16,6 +16,7 @@
   },
   "private": true,
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
   }
 }
