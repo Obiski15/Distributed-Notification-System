@@ -1,4 +1,15 @@
 #!/bin/sh
 
-echo "Running Type Check..."
+echo "🔨 Building shared package..."
+pnpm --filter @dns/shared run build
+
+echo "🔍 Running ESLint..."
+pnpm run lint
+
+echo "✨ Checking code formatting..."
+pnpm run format:check
+
+echo "📝 Running Type Check..."
 pnpm run type-check
+
+echo "✅ All checks passed! Pushing..."

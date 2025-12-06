@@ -6,8 +6,8 @@
   "scripts": {
     "commitlint": "commitlint --edit",
     "prepare": "husky",
-    "format": "prettier --write \"**/*.{ts,js,json,md,yml,yaml}\" \"test/**/*.ts\"",
-    "format:check": "prettier --check \"**/*.{ts,js,json,md,yml,yaml}\" \"test/**/*.ts\"",
+    "format": "prettier --write \"**/*.{ts,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md,yml,yaml}\"",
     "lint": "eslint \"{services,shared}/**/*.ts\"",
     "lint:fix": "eslint \"{services,shared}/**/*.ts\" --fix",
     "type-check": "pnpm -r --parallel run type-check",

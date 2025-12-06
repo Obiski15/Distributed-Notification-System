@@ -6,7 +6,13 @@ import tseslint from "typescript-eslint"
 
 export default [
   {
-    ignores: ["eslint.config.mjs", "dist/**", "**/webpack.config.js"],
+    ignores: [
+      "eslint.config.mjs",
+      "dist/**",
+      "**/dist/**",
+      "**/webpack.config.js",
+      "**/*.d.ts",
+    ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
