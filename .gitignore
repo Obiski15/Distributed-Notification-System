@@ -54,3 +54,4 @@ logs/
 firebase-token-gen/
 gateway-fastify/
 IMPROVEMENTS.txt
+AWS_SETUP.md
