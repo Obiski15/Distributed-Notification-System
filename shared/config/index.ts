@@ -1,12 +1,12 @@
 import "./load-env.js"
 
-const isDev = process.env.NODE_ENV === "development"
-const isProd = process.env.NODE_ENV === "production"
+const is_dev = process.env.NODE_ENV === "development"
+const is_prod = process.env.NODE_ENV === "production"
 
 export const config = {
   // ENVIRONMENT
-  isDev,
-  isProd,
+  is_dev,
+  is_prod,
 
   // SERVICES
   TEMPLATE_SERVICE: "template-service",
@@ -64,7 +64,7 @@ export const config = {
   SMTP_HOST: process.env.SMTP_HOST!,
 
   // BREAKER OPTIONS
-  BREAKER_OPTIONS: isDev
+  BREAKER_OPTIONS: is_dev
     ? {
         timeout: 30000,
         resetTimeout: 1000,

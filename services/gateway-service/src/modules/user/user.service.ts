@@ -1,26 +1,17 @@
 import { config } from "@dns/shared/config/index"
-import type { Service } from "@dns/shared/types/index"
-import circuit_breaker from "@dns/shared/utils/circuit_breaker"
 import discover_service from "@dns/shared/utils/discover_service"
-import { HttpService } from "@nestjs/axios"
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager"
-import { Inject, Injectable, OnModuleInit } from "@nestjs/common"
-import { AxiosResponse } from "axios"
-import { firstValueFrom } from "rxjs"
+import { Inject, Injectable } from "@nestjs/common"
+import type { FastifyRequest } from "fastify"
+import { Fetch } from "../../common/fetch"
+
 @Injectable()
-export class UserService implements OnModuleInit {
-  private service: Service
-
-  constructor(
-    @Inject(CACHE_MANAGER) private readonly cache: Cache,
-    private readonly httpService: HttpService,
-  ) {}
-
-  async onModuleInit() {
-    this.service = await discover_service(config.USER_SERVICE)
-  }
+export class UserService {
+  constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
   async get_user(id: string) {
+    const service = await discover_service(config.USER_SERVICE)
+
     const cache_key = `user:${id}`
 
     const cached_status = (await this.cache.get(cache_key)) as IUser
@@ -29,26 +20,24 @@ export class UserService implements OnModuleInit {
       return cached_status
     }
 
-    const target_url = `http://${
-      this.service.ServiceAddress || this.service.Address
-    }:${this.service.ServicePort}/api/v1/users`
+    // Create a mock request for the Fetch class
+    const mockRequest = {
+      url: "/api/v1/users",
+      method: "GET",
+      headers: {
+        "x-user-id": id,
+      },
+      body: undefined,
+      query: {},
+    } as unknown as FastifyRequest
 
-    const res = await circuit_breaker<AxiosResponse<{ data: IUser }>>(
-      () =>
-        firstValueFrom(
-          this.httpService.request({
-            url: target_url,
-            method: "GET",
-            headers: {
-              "x-user-id": id,
-            },
-          }),
-        ),
-      config.USER_SERVICE,
-    ).fire()
+    const fetch = new Fetch(service, mockRequest)
+    const data = (await fetch.fetch_service(config.USER_SERVICE)) as {
+      data: IUser
+    }
 
-    await this.cache.set(cache_key, res.data.data, 3000)
+    await this.cache.set(cache_key, data.data, 3000)
 
-    return res.data.data
+    return data.data
   }
 }

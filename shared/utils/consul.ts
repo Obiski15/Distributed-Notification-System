@@ -1,3 +1,5 @@
+import axios from "axios"
+import { config as config_vars } from "../config/index.js"
 import logger from "./logger.js"
 
 interface ConsulServiceConfig {
@@ -12,11 +14,8 @@ export async function register_consul_service(
 ): Promise<void> {
   const service_id = `${config.service_name}-${config.service_port}`
 
-  // Use host.docker.internal when Consul is on localhost (Docker can reach host), otherwise use service name
-  const service_address =
-    config.consul_host === "localhost" || config.consul_host === "127.0.0.1"
-      ? "host.docker.internal"
-      : config.service_name
+  // Use service name when not on localhost
+  const service_address = config_vars.is_dev ? "localhost" : config.service_name
 
   const body = {
     Name: config.service_name,
@@ -29,12 +28,13 @@ export async function register_consul_service(
     },
   }
 
-  await fetch(
+  await axios.put(
     `http://${config.consul_host}:${config.consul_port}/v1/agent/service/register`,
+    body,
     {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
     },
   )
 
@@ -49,9 +49,8 @@ export async function deregister_consul_service(
   const service_id = `${config.service_name}-${config.service_port}`
 
   try {
-    await fetch(
+    await axios.put(
       `http://${config.consul_host}:${config.consul_port}/v1/agent/service/deregister/${service_id}`,
-      { method: "PUT" },
     )
     logger.info(`✅ [${config.service_name}] Deregistered from Consul`)
   } catch (err) {

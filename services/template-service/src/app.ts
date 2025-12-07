@@ -7,6 +7,7 @@ import { config } from "@dns/shared/config/index.js"
 import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
 import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
 import { logging_middleware } from "@dns/shared/middleware/logging.middleware.js"
+import health_schema from "@dns/shared/schemas/health-schema.js"
 import error_handler from "@dns/shared/utils/error_handler.js"
 
 import template_routes from "./routes/template_route.js"
@@ -42,14 +43,20 @@ app.register(mysql, {
 
 app.register(template_routes, { prefix: "/api/v1/templates" })
 
-app.get("/health", async (_request, reply) => {
-  reply.send({
-    success: true,
-    status_code: STATUS_CODES.OK,
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  })
-})
+app.get(
+  "/health",
+  {
+    schema: health_schema,
+  },
+  async (_request, reply) => {
+    reply.send({
+      success: true,
+      status_code: STATUS_CODES.OK,
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    })
+  },
+)
 
 app.setNotFoundHandler((_request, reply) => {
   reply.status(STATUS_CODES.NOT_FOUND).send({

@@ -9,12 +9,15 @@ import { CacheModule } from "@nestjs/cache-manager"
 import { JwtModule } from "@nestjs/jwt"
 import { redisStore } from "cache-manager-redis-store"
 
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler"
+import { DEFAULT_LIMIT } from "./config/throttler.config"
 import { AuthController } from "./modules/auth/auth.controller"
 import { AuthGuard } from "./modules/auth/guards/auth.guard"
 import { NotificationsModule } from "./modules/notifications/notifications.module"
 import { SharedModule } from "./modules/shared.module"
 import { TemplateController } from "./modules/template/template.controller"
 import { UserModule } from "./modules/user/user.module"
+import { SwaggerModule } from "./swagger/swaggerModule"
 
 @Module({
   imports: [
@@ -34,9 +37,11 @@ import { UserModule } from "./modules/user/user.module"
       }),
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot({ throttlers: [DEFAULT_LIMIT] }),
     UserModule,
     NotificationsModule,
     SharedModule,
+    SwaggerModule,
   ],
   controllers: [AuthController, TemplateController],
   providers: [
@@ -51,6 +56,10 @@ import { UserModule } from "./modules/user/user.module"
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })
