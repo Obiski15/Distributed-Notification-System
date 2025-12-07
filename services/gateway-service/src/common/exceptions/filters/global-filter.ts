@@ -139,7 +139,7 @@ export class GlobalFilter implements ExceptionFilter {
     }
 
     // Include stack trace in development for non-operational errors
-    if (config.isDev && !is_operational && stack) {
+    if (config.is_dev && !is_operational && stack) {
       error_response.stack = stack
     }
 

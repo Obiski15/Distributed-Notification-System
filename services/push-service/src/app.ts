@@ -3,49 +3,14 @@ import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
 import { logging_middleware } from "@dns/shared/middleware/logging.middleware.js"
 import health_schema from "@dns/shared/schemas/health-schema.js"
 import error_handler from "@dns/shared/utils/error_handler.js"
-import swagger from "@fastify/swagger"
-import swaggerUi from "@fastify/swagger-ui"
+import fastifySwagger from "@fastify/swagger"
+import fastifySwaggerUi from "@fastify/swagger-ui"
 import Fastify, { FastifyReply, FastifyRequest } from "fastify"
 
 const app = Fastify({ logger: false })
 
 // Add logging middleware
 app.addHook("onRequest", logging_middleware)
-
-// Register Swagger
-await app.register(swagger, {
-  swagger: {
-    info: {
-      title: "Push Service API",
-      description: "API documentation for Push Notification Service",
-      version: "1.0.0",
-      contact: {
-        name: "Push Service Team",
-        email: "support@example.com",
-      },
-    },
-    host: "localhost:3003",
-    schemes: ["http", "https"],
-    consumes: ["application/json"],
-    produces: ["application/json"],
-    tags: [
-      {
-        name: "Push Notifications",
-        description: "Push notification operations",
-      },
-      { name: "Health", description: "Health check endpoints" },
-    ],
-  },
-})
-
-// Register Swagger UI
-await app.register(swaggerUi, {
-  routePrefix: "/docs",
-  uiConfig: {
-    docExpansion: "list",
-    deepLinking: false,
-  },
-})
 
 app.get(
   "/health",
@@ -61,6 +26,25 @@ app.get(
     })
   },
 )
+
+// Swagger setup
+app.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: "Push Service API",
+      description: "API documentation for Push Service",
+      version: "1.0.0",
+    },
+    paths: {},
+  },
+})
+app.register(fastifySwaggerUi, {
+  routePrefix: "/docs",
+  uiConfig: {
+    docExpansion: "list",
+    deepLinking: true,
+  },
+})
 
 app.setNotFoundHandler((_request, reply) => {
   reply.status(STATUS_CODES.NOT_FOUND).send({

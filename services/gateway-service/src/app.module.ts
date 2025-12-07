@@ -17,6 +17,7 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
 import { SharedModule } from "./modules/shared.module"
 import { TemplateController } from "./modules/template/template.controller"
 import { UserModule } from "./modules/user/user.module"
+import { SwaggerModule } from "./swagger/swaggerModule"
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UserModule } from "./modules/user/user.module"
     UserModule,
     NotificationsModule,
     SharedModule,
+    SwaggerModule,
   ],
   controllers: [AuthController, TemplateController],
   providers: [

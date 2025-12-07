@@ -1,6 +1,6 @@
 import { config } from "@dns/shared/config/index"
-import type { Service } from "@dns/shared/types/index"
-import { All, Controller, Inject, OnModuleInit, Req } from "@nestjs/common"
+import { All, Controller, Inject, Req } from "@nestjs/common"
+import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger"
 import { FastifyRequest } from "fastify"
 
 import discover_service from "@dns/shared/utils/discover_service"
@@ -11,18 +11,17 @@ interface AuthenticatedRequest extends FastifyRequest {
   user: { id: string }
 }
 
+@ApiTags("Users")
+@ApiBearerAuth("JWT-auth")
 @Controller()
-export class UserController implements OnModuleInit {
-  private service: Service
+export class UserController {
   constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
-  async onModuleInit() {
-    this.service = await discover_service(config.USER_SERVICE)
-  }
-
+  @ApiExcludeEndpoint()
   @All("users*")
   async userRoutes(@Req() request: AuthenticatedRequest) {
-    const fetch_service = new Fetch(this.service, request)
+    const service = await discover_service(config.USER_SERVICE)
+    const fetch_service = new Fetch(service, request)
     const data = await fetch_service.fetch_service(config.USER_SERVICE)
 
     if (request.method !== "GET")

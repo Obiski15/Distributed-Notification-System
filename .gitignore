@@ -55,3 +55,4 @@ firebase-token-gen/
 gateway-fastify/
 IMPROVEMENTS.txt
 AWS_SETUP.md
+CLOUDWATCH_SETUP.md

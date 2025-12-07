@@ -1,5 +1,7 @@
+import { config } from "@dns/shared/config/index"
 import * as STATUS_CODES from "@dns/shared/constants/status-codes"
 import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
+import health_schema from "@dns/shared/schemas/health-schema"
 import { setup_graceful_shutdown } from "@dns/shared/utils/graceful-shutdown"
 import logger from "@dns/shared/utils/logger"
 import { ValidationPipe } from "@nestjs/common"
@@ -10,9 +12,6 @@ import {
 } from "@nestjs/platform-fastify"
 import helmet from "helmet"
 import { AppModule } from "./app.module"
-
-// import { SwaggerGateway } from "./swagger/swaggerService"
-import { config } from "@dns/shared/config/index"
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -37,7 +36,7 @@ async function bootstrap() {
     exclude: ["/health"],
   })
 
-  instance.get("/health", (_req, reply) => {
+  instance.get("/health", { schema: health_schema }, (_req, reply) => {
     reply.send({
       success: true,
       status_code: STATUS_CODES.OK,
@@ -55,9 +54,10 @@ async function bootstrap() {
     }),
   )
 
-  // Setup Swagger UI
-  // const swaggerGateway = app.get(SwaggerGateway)
-  // swaggerGateway.setup(app)
+  // Setup unified Swagger Documentation
+  const { SwaggerGateway } = await import("./swagger/swaggerService")
+  const swaggerGateway = app.get(SwaggerGateway)
+  swaggerGateway.setup(app)
 
   await app.listen(config.GATEWAY_SERVICE_PORT, config.HOST)
   logger.info(`API Gateway listening on PORT ${config.GATEWAY_SERVICE_PORT}`)

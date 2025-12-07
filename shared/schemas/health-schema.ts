@@ -1,7 +1,7 @@
 import error_response_schema from "./error-response-schema.js"
 
 const health_schema = {
-  description: "Check if the user service is healthy.",
+  description: "Check if the service is healthy.",
   tags: ["Health"],
   response: {
     200: {
