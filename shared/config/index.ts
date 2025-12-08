@@ -56,6 +56,9 @@ export const config = {
   FCM_PRIVATE_KEY: process.env.FCM_PRIVATE_KEY!,
   FCM_PRIVATE_KEY_ID: process.env.FCM_PRIVATE_KEY_ID!,
 
+  // ORIGINS
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS?.split(",") || [],
+
   // SMTP
   SMTP_FROM: "<hng.notification@gmail.com>",
   SMTP_USER: process.env.SMTP_USER!,
