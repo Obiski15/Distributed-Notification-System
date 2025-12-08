@@ -63,3 +63,11 @@ export const UNAUTHORIZED = "Unauthorized"
 
 // GATEWAY
 export const BAD_GATEWAY = "Error communicating with upstream service"
+
+// DATABASE
+export const DATABASE_INITIALIZATION_ERROR = "Database initialization failed."
+export const DATABASE_INITIALIZED = "Database initialized successfully."
+export const DATABASE_CONNECTION_CLOSE_ERROR =
+  "Error closing database connection."
+export const DATABASE_CONNECTION_CLOSED =
+  "Database connection closed successfully."

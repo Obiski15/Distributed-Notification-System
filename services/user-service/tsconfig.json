@@ -3,6 +3,8 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "outDir": "./dist",
     "rootDir": "./src",
     "paths": {

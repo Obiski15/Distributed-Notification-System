@@ -1,4 +1,3 @@
-import mysql from "@fastify/mysql"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
@@ -11,7 +10,6 @@ import health_schema from "@dns/shared/schemas/health-schema.js"
 import error_handler from "@dns/shared/utils/error_handler.js"
 
 import template_routes from "./routes/template_route.js"
-
 const app = Fastify({ logger: false })
 
 // Add logging middleware
@@ -34,11 +32,6 @@ await app.register(swaggerUi, {
     deepLinking: false,
   },
   staticCSP: true,
-})
-
-app.register(mysql, {
-  promise: true,
-  connectionString: config.TEMPLATE_SERVICE_DB,
 })
 
 app.register(template_routes, { prefix: "/api/v1/templates" })
