@@ -8,7 +8,7 @@ import {
   HttpException,
   HttpStatus,
 } from "@nestjs/common"
-import { AxiosError } from "axios"
+import { isAxiosError } from "axios"
 import { FastifyReply, FastifyRequest } from "fastify"
 import { CustomException } from "../custom/custom-exceptions"
 
@@ -62,7 +62,7 @@ export class GlobalFilter implements ExceptionFilter {
       is_operational = status_code < 500
     }
     // Handle Axios errors from external services
-    else if (exception instanceof AxiosError) {
+    else if (isAxiosError(exception)) {
       if (exception.response?.data) {
         // Service returned an error response
         const axios_data = exception.response.data as IError
@@ -79,7 +79,7 @@ export class GlobalFilter implements ExceptionFilter {
         // Network/connection errors
         status_code = HttpStatus.SERVICE_UNAVAILABLE
         message = SYSTEM_MESSAGES.SERVICE_UNAVAILABLE
-        error_code = "SERVICE_UNAVAILABLE"
+        error_code = ERROR_CODES.SERVICE_UNAVAILABLE
         details = `Service connection failed: ${exception.message}`
         is_operational = true
       } else {
