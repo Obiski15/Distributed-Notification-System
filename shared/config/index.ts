@@ -1,3 +1,4 @@
+import breaker_filter from "../utils/breaker_filter.js"
 import "./load-env.js"
 
 const is_dev = process.env.NODE_ENV === "development"
@@ -73,22 +74,13 @@ export const config = {
         resetTimeout: 1000,
         errorThresholdPercentage: 50,
         volumeThreshold: 1,
-        errorFilter: (err: any) => {
-          // Only count 5xx errors
-          const status = err?.response?.status || err?.status
-          return !status || status >= 500
-        },
+        errorFilter: breaker_filter,
       }
     : {
         timeout: 3000,
         resetTimeout: 30000,
         errorThresholdPercentage: 20,
         volumeThreshold: 10,
-        errorFilter: (err: any) => {
-          // Only count 5xx errors, timeouts, and network errors
-          // Do NOT count 4xx errors (client errors)
-          const status = err?.response?.status || err?.status
-          return !status || status >= 500
-        },
+        errorFilter: breaker_filter,
       },
 }
