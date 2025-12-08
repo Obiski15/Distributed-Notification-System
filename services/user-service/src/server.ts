@@ -6,6 +6,7 @@ import {
 import { setup_graceful_shutdown } from "@dns/shared/utils/graceful-shutdown.js"
 import logger from "@dns/shared/utils/logger.js"
 import app from "./app.js"
+import { db_destroy, db_init } from "./config/db.js"
 
 const consul_config = {
   service_name: config.USER_SERVICE,
@@ -18,6 +19,8 @@ const start = async () => {
   try {
     await app.ready()
 
+    await db_init()
+
     await app.listen({ port: config.USER_SERVICE_PORT, host: config.HOST })
     logger.info(`User service listening on port ${config.USER_SERVICE_PORT}`)
 
@@ -29,6 +32,10 @@ const start = async () => {
         cleanup: async () => {
           await deregister_consul_service(consul_config)
         },
+        timeout: 5000,
+      },
+      {
+        cleanup: db_destroy,
         timeout: 5000,
       },
       {

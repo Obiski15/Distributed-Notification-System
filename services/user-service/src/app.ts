@@ -1,5 +1,4 @@
 import jwt from "@fastify/jwt"
-import mysql from "@fastify/mysql"
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
@@ -38,11 +37,6 @@ await app.register(swaggerUi, {
     deepLinking: false,
   },
   staticCSP: true,
-})
-
-await app.register(mysql, {
-  promise: true,
-  connectionString: config.USER_SERVICE_DB,
 })
 
 await app.register(jwt, {
