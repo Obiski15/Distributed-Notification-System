@@ -1,116 +1,107 @@
-import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
+import * as ERROR_CODES from "@dns/shared/constants/error-codes"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
 import AppError from "@dns/shared/utils/AppError.js"
-import type { ResultSetHeader, RowDataPacket } from "@fastify/mysql"
-import { type FastifyInstance } from "fastify"
-
-export interface Template extends RowDataPacket {
-  id: number
-  name: string
-  subject: string | null
-  body: string | null
-}
+import { TemplateDataSource } from "../config/datasource"
+import { Template, TemplateType } from "../entities/template-entity"
 
 export interface CreateTemplateBody {
   name: string
   subject: string
   body: string
+  type?: TemplateType
+  image_url?: string
+  action_url?: string
+  metadata?: Record<string, any>
+  version?: number
 }
 
-export const find_all_templates = async (fastify: FastifyInstance) => {
-  const [templates] = await fastify.mysql.query<Template[]>(
-    "SELECT * FROM templates",
-  )
-  return templates as Template[]
+const templateRepo = TemplateDataSource.getRepository(Template)
+
+export const find_all_templates = async () => {
+  const templates = await templateRepo.find()
+
+  return templates
 }
 
-export const create_template = async (
-  fastify: FastifyInstance,
-  body: CreateTemplateBody,
-): Promise<Template> => {
-  if (!body.name || !body.subject || !body.body) {
-    throw new AppError({
-      message: "Missing required fields",
-      status_code: STATUS_CODES.BAD_REQUEST,
-      code: ERROR_CODES.MISSING_REQUIRED_FIELD,
-    })
-  }
+export const create_template = async (body: Partial<Template>) => {
+  const existing_template = await templateRepo.findOne({
+    where: {
+      name: body.name,
+      type: body.type ?? TemplateType.EMAIL,
+    },
+    order: { version: "DESC" },
+  })
 
-  const [result] = await fastify.mysql.query<ResultSetHeader>(
-    "INSERT INTO templates (name, subject, body) VALUES (?, ?, ?)",
-    [body.name, body.subject, body.body],
-  )
+  const version = existing_template ? existing_template.version + 1 : 1
 
-  return {
-    id: result.insertId,
-    name: body.name,
-    subject: body.subject,
-    body: body.body,
-  } as Template
+  const template = await templateRepo.save({ ...body, version })
+
+  return template
 }
 
 export const find_template = async (
-  fastify: FastifyInstance,
   template_code: string,
-): Promise<Template> => {
-  const [[template]] = await fastify.mysql.query<Template[]>(
-    "SELECT * FROM templates WHERE name = ?",
-    [template_code],
-  )
+  version?: number,
+) => {
+  const filters = { name: template_code } as Record<string, unknown>
+  if (version !== undefined) {
+    filters.version = version
+  }
+
+  const template = await templateRepo.findOne({
+    where: filters,
+    order: {
+      version: "DESC",
+    },
+  })
 
   if (!template)
     throw new AppError({
-      message: "Template not found",
+      message: SYSTEM_MESSAGES.TEMPLATE_NOT_FOUND,
       status_code: STATUS_CODES.NOT_FOUND,
       code: ERROR_CODES.TEMPLATE_NOT_FOUND,
     })
 
-  return template as Template
+  return template
 }
 
 export const update_template = async (
-  fastify: FastifyInstance,
-  template_code: string,
-  fields: Record<string, unknown>,
-): Promise<Record<string, unknown>> => {
+  template_id: string,
+  fields: Partial<Template>,
+) => {
   if (!fields || !Object.keys(fields).length)
     throw new AppError({
-      message: "No fields provided for update",
+      message: SYSTEM_MESSAGES.NO_VALID_TEMPLATE_UPDATE_FIELDS,
       status_code: STATUS_CODES.BAD_REQUEST,
       code: ERROR_CODES.INVALID_INPUT,
     })
 
-  const setClauses: string[] = []
-  const values: unknown[] = []
+  const template = await templateRepo.findOne({
+    where: {
+      id: template_id,
+    },
+  })
 
-  for (const [key, value] of Object.entries(fields)) {
-    setClauses.push(`${key} = ?`)
-    values.push(value)
-  }
-
-  const sql = `UPDATE templates SET ${setClauses.join(", ")} WHERE name = ?`
-  values.push(template_code)
-
-  const [result] = await fastify.mysql.query<ResultSetHeader>(sql, values)
-
-  if (result.affectedRows === 0)
+  if (!template) {
     throw new AppError({
-      message: "Template not found",
+      message: SYSTEM_MESSAGES.TEMPLATE_NOT_FOUND,
       status_code: STATUS_CODES.NOT_FOUND,
       code: ERROR_CODES.TEMPLATE_NOT_FOUND,
     })
+  }
+
+  await templateRepo.update({ id: template_id }, fields)
 
   return fields
 }
 
-export const delete_template = async (
-  fastify: FastifyInstance,
-  template_code: string,
-): Promise<void> => {
-  const [[template]] = await fastify.mysql.query<Template[]>(
-    "SELECT id FROM templates WHERE name = ?",
-    [template_code],
-  )
+export const delete_template = async (template_id: string) => {
+  const template = await templateRepo.findOne({
+    where: {
+      id: template_id,
+    },
+  })
 
   if (!template) {
     throw new AppError({
@@ -120,7 +111,5 @@ export const delete_template = async (
     })
   }
 
-  await fastify.mysql.query("DELETE FROM templates WHERE name = ?", [
-    template_code,
-  ])
+  await templateRepo.delete({ id: template_id })
 }

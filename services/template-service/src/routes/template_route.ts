@@ -2,6 +2,7 @@ import * as statusCodes from "@dns/shared/constants/status-codes.js"
 import * as sysMsg from "@dns/shared/constants/system-message.js"
 import { type FastifyInstance } from "fastify"
 
+import { Template } from "../entities/template-entity.js"
 import {
   create_template,
   delete_template,
@@ -24,7 +25,7 @@ const template_routes = (fastify: FastifyInstance) => {
       schema: templates_schema,
     },
     async (_request, reply) => {
-      const templates = await find_all_templates(fastify)
+      const templates = await find_all_templates()
 
       reply.code(statusCodes.OK).send({
         success: true,
@@ -35,13 +36,15 @@ const template_routes = (fastify: FastifyInstance) => {
     },
   )
 
-  fastify.post<{ Body: CreateTemplateBody }>(
+  fastify.post<{
+    Body: Partial<Template>
+  }>(
     "/",
     {
       schema: create_template_schema,
     },
     async (request, reply) => {
-      const template = await create_template(fastify, request.body)
+      const template = await create_template(request.body)
 
       reply.code(statusCodes.CREATED).send({
         success: true,
@@ -58,9 +61,25 @@ const template_routes = (fastify: FastifyInstance) => {
       schema: template_schema,
     },
     async (request, reply) => {
+      const template = await find_template(request.params.template_code)
+      reply.code(statusCodes.OK).send({
+        success: true,
+        status: statusCodes.OK,
+        message: sysMsg.TEMPLATE_RETRIEVED,
+        data: template,
+      })
+    },
+  )
+
+  fastify.get<{ Params: { template_code: string; version: number } }>(
+    "/:template_code/:version",
+    {
+      schema: template_schema,
+    },
+    async (request, reply) => {
       const template = await find_template(
-        fastify,
         request.params.template_code,
+        +request.params.version,
       )
       reply.code(statusCodes.OK).send({
         success: true,
@@ -72,18 +91,18 @@ const template_routes = (fastify: FastifyInstance) => {
   )
 
   fastify.patch<{
-    Body: Record<string, unknown>
-    Params: { template_code: string }
+    Body: Partial<Template>
+    Params: { template_id: string }
   }>(
-    "/:template_code",
+    "/:template_id",
     {
       schema: update_template_schema,
     },
     async (request, reply) => {
-      const { template_code } = request.params
+      const { template_id } = request.params
       const fields = request.body
 
-      const result = await update_template(fastify, template_code, fields)
+      const result = await update_template(template_id, fields)
 
       reply.send({
         success: true,
@@ -94,13 +113,13 @@ const template_routes = (fastify: FastifyInstance) => {
     },
   )
 
-  fastify.delete<{ Params: { template_code: string } }>(
-    "/:template_code",
+  fastify.delete<{ Params: { template_id: string } }>(
+    "/:template_id",
     {
       schema: delete_template_schema,
     },
     async (request, reply) => {
-      await delete_template(fastify, request.params.template_code)
+      await delete_template(request.params.template_id)
 
       reply.code(statusCodes.OK).send({
         success: true,

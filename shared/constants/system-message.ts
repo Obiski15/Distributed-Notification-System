@@ -19,6 +19,11 @@ export const TEMPLATE_RETRIEVED = "Template retrieved successfully."
 export const TEMPLATE_UPDATED = "Template updated successfully."
 export const TEMPLATE_CREATED = "Template created successfully."
 export const TEMPLATE_DELETED = "Template deleted successfully."
+export const TEMPLATE_ALREADY_EXISTS =
+  "Template with this name and version already exists."
+export const TEMPLATE_NOT_FOUND = "Template not found."
+export const NO_VALID_TEMPLATE_UPDATE_FIELDS =
+  "No valid fields provided for update."
 
 // USERS/AUTH
 export const USER_RETRIEVED = "User retrieved successfully."

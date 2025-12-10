@@ -1,5 +1,6 @@
 import logger from "@dns/shared/utils/logger"
 import { TemplateDataSource } from "../config/datasource"
+import { db_destroy, db_init } from "../config/db"
 import { Template, TemplateType } from "../entities/template-entity"
 
 const wrapEmail = (
@@ -7,7 +8,8 @@ const wrapEmail = (
   content: string,
   ctaLink: string,
   ctaText: string,
-) => `
+) =>
+  `
 <!DOCTYPE html>
 <html>
 <head>
@@ -88,115 +90,122 @@ const wrapEmail = (
 </body>
 </html>
 `
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
+;(async () => {
+  try {
+    await db_init()
+    const templateRepo = TemplateDataSource.getRepository(Template)
 
-export const seed_templates = async () => {
-  const templateRepo = TemplateDataSource.getRepository(Template)
+    // Check if seeded
+    const count = await templateRepo.count()
+    if (count > 0) {
+      logger.info("Database already populated. Skipping seed.")
+      return
+    }
 
-  // Check if seeded
-  const count = await templateRepo.count()
-  if (count > 0) {
-    console.log("Database already populated. Skipping seed.")
-    return
+    logger.info("Seeding templates...")
+
+    const templates = [
+      // EMAIL TEMPLATES
+      {
+        name: "welcome_email",
+        type: TemplateType.EMAIL,
+        subject: "Welcome to the Family, {{name}}!",
+        body: wrapEmail(
+          "Welcome, {{name}}!",
+          "We're so excited to have you on board. To get started and explore your new account, please click the button below.",
+          "{{link}}",
+          "Get Started",
+        ),
+        action_url: "{{link}}",
+        metadata: { category: "onboarding", importance: "high" },
+      },
+      {
+        name: "password_reset",
+        type: TemplateType.EMAIL,
+        subject: "Reset Your Password",
+        body: wrapEmail(
+          "Password Reset Request",
+          "Hello {{name}}, we received a request to reset your password. If you made this request, click the button below.",
+          "{{link}}",
+          "Reset Password",
+        ),
+        action_url: "{{link}}",
+        metadata: { category: "security", importance: "critical" },
+      },
+      {
+        name: "order_confirmation",
+        type: TemplateType.EMAIL,
+        subject: "Your Order is Confirmed!",
+        body: wrapEmail(
+          "Thanks for your order, {{name}}!",
+          "We've received your order #{{order_id}} and are getting it ready. You can view your order details and status by clicking the button below.",
+          "{{link}}",
+          "View Order Details",
+        ),
+        action_url: "{{link}}",
+        metadata: { category: "transactional" },
+      },
+      {
+        name: "account_verification",
+        type: TemplateType.EMAIL,
+        subject: "Verify Your Account",
+        body: wrapEmail(
+          "Almost there, {{name}}!",
+          "Please verify your email address to complete your registration. Click the button below to activate your account.",
+          "{{link}}",
+          "Verify Account",
+        ),
+        action_url: "{{link}}",
+        metadata: { category: "security" },
+      },
+
+      // PUSH NOTIFICATION TEMPLATES
+      {
+        name: "push_new_message",
+        type: TemplateType.PUSH,
+        subject: "New Message from {{sender_name}}",
+        body: "{{message_preview}}",
+        image_url: "https://cdn.myapp.com/assets/icons/chat_bubble.png",
+        action_url: "myapp://chat/{{chat_id}}",
+        metadata: {
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+          sound: "default",
+          channel_id: "messages",
+          priority: "high",
+        },
+      },
+      {
+        name: "push_order_shipped",
+        type: TemplateType.PUSH,
+        subject: "Order Shipped! 📦",
+        body: "Your order #{{order_id}} is on its way. Track it now.",
+        image_url: "https://cdn.myapp.com/assets/images/delivery_truck.jpg",
+        action_url: "myapp://orders/{{order_id}}",
+        metadata: {
+          channel_id: "orders",
+          screen: "OrderDetailScreen",
+        },
+      },
+      {
+        name: "push_promo_sale",
+        type: TemplateType.PUSH,
+        subject: "Flash Sale Alert! ⚡",
+        body: "Get 50% off on all {{category}} items. Offer ends in 2 hours!",
+        image_url: "https://cdn.myapp.com/assets/banners/flash_sale.jpg",
+        action_url: "myapp://shop/category/{{category_id}}",
+        metadata: {
+          channel_id: "marketing",
+          analytics_label: "flash_sale_campaign_v1",
+        },
+      },
+    ]
+
+    await templateRepo.save(templates)
+    logger.info(`✅ Seeded ${templates.length} templates successfully!`)
+  } catch (error) {
+    logger.error(error, "❌ Error seeding templates:")
+  } finally {
+    await db_destroy()
   }
-
-  logger.info("Seeding templates...")
-
-  const templates = [
-    // EMAIL TEMPLATES
-    {
-      name: "welcome_email",
-      type: TemplateType.EMAIL,
-      subject: "Welcome to the Family, {{name}}!",
-      body: wrapEmail(
-        "Welcome, {{name}}!",
-        "We're so excited to have you on board. To get started and explore your new account, please click the button below.",
-        "{{link}}",
-        "Get Started",
-      ),
-      action_url: "{{link}}",
-      metadata: { category: "onboarding", importance: "high" },
-    },
-    {
-      name: "password_reset",
-      type: TemplateType.EMAIL,
-      subject: "Reset Your Password",
-      body: wrapEmail(
-        "Password Reset Request",
-        "Hello {{name}}, we received a request to reset your password. If you made this request, click the button below.",
-        "{{link}}",
-        "Reset Password",
-      ),
-      action_url: "{{link}}",
-      metadata: { category: "security", importance: "critical" },
-    },
-    {
-      name: "order_confirmation",
-      type: TemplateType.EMAIL,
-      subject: "Your Order is Confirmed!",
-      body: wrapEmail(
-        "Thanks for your order, {{name}}!",
-        "We've received your order #{{order_id}} and are getting it ready. You can view your order details and status by clicking the button below.",
-        "{{link}}",
-        "View Order Details",
-      ),
-      action_url: "{{link}}",
-      metadata: { category: "transactional" },
-    },
-    {
-      name: "account_verification",
-      type: TemplateType.EMAIL,
-      subject: "Verify Your Account",
-      body: wrapEmail(
-        "Almost there, {{name}}!",
-        "Please verify your email address to complete your registration. Click the button below to activate your account.",
-        "{{link}}",
-        "Verify Account",
-      ),
-      action_url: "{{link}}",
-      metadata: { category: "security" },
-    },
-
-    // PUSH NOTIFICATION TEMPLATES
-    {
-      name: "push_new_message",
-      type: TemplateType.PUSH,
-      subject: "New Message from {{sender_name}}",
-      body: "{{message_preview}}",
-      image_url: "https://cdn.myapp.com/assets/icons/chat_bubble.png",
-      action_url: "myapp://chat/{{chat_id}}",
-      metadata: {
-        click_action: "FLUTTER_NOTIFICATION_CLICK",
-        sound: "default",
-        channel_id: "messages",
-        priority: "high",
-      },
-    },
-    {
-      name: "push_order_shipped",
-      type: TemplateType.PUSH,
-      subject: "Order Shipped! 📦",
-      body: "Your order #{{order_id}} is on its way. Track it now.",
-      image_url: "https://cdn.myapp.com/assets/images/delivery_truck.jpg",
-      action_url: "myapp://orders/{{order_id}}",
-      metadata: {
-        channel_id: "orders",
-        screen: "OrderDetailScreen",
-      },
-    },
-    {
-      name: "push_promo_sale",
-      type: TemplateType.PUSH,
-      subject: "Flash Sale Alert! ⚡",
-      body: "Get 50% off on all {{category}} items. Offer ends in 2 hours!",
-      image_url: "https://cdn.myapp.com/assets/banners/flash_sale.jpg",
-      action_url: "myapp://shop/category/{{category_id}}",
-      metadata: {
-        channel_id: "marketing",
-        analytics_label: "flash_sale_campaign_v1",
-      },
-    },
-  ]
-
-  await templateRepo.save(templates)
-  logger.info(`✅ Seeded ${templates.length} templates successfully!`)
-}
+})()

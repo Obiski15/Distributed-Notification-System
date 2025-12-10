@@ -2,7 +2,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from "typeorm"
 
@@ -12,11 +14,13 @@ export enum TemplateType {
 }
 
 @Entity("templates")
+@Unique(["name", "version", "type"])
+@Index(["name", "version"])
 export class Template {
   @PrimaryGeneratedColumn("uuid")
   id: string
 
-  @Column({ type: "varchar", unique: true })
+  @Column({ type: "varchar" })
   name: string
 
   @Column({
