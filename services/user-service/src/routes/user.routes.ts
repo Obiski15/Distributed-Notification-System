@@ -18,7 +18,7 @@ const user_id = (request: FastifyRequest) => {
 }
 
 const user_route = (fastify: FastifyInstance) => {
-  const user_model = new UserModel(fastify)
+  const user_model = new UserModel()
 
   fastify.addHook("preHandler", (request, _reply, done) => {
     const id = request.headers["x-user-id"]
@@ -41,6 +41,13 @@ const user_route = (fastify: FastifyInstance) => {
       const id = user_id(request)
 
       const user = await user_model.find_by_id(id)
+
+      if (!user)
+        throw new AppError({
+          message: SYSTEM_MESSAGES.USER_NOT_FOUND,
+          status_code: STATUS_CODES.NOT_FOUND,
+          code: ERROR_CODES.USER_NOT_FOUND,
+        })
 
       reply.code(STATUS_CODES.OK).send({
         message: SYSTEM_MESSAGES.USER_RETRIEVED,

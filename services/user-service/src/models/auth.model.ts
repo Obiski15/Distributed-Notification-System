@@ -1,72 +1,61 @@
-import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
-import * as SYS_MESSAGES from "@dns/shared/constants/system-message.js"
-import AppError from "@dns/shared/utils/AppError.js"
-import type { ResultSetHeader, RowDataPacket } from "@fastify/mysql"
+import * as ERROR_CODES from "@dns/shared/constants/error-codes"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
+import AppError from "@dns/shared/utils/AppError"
 import bcrypt from "bcrypt"
-// import { v4 as uuid } from "uuid"
 
-import { type FastifyInstance } from "fastify"
-import { BaseModel } from "./base.model.js"
+import { FastifyInstance } from "fastify"
+import { UserDataSource } from "../config/datasource"
+import { User as UserEntity } from "../entities/user-entity"
+import { BaseModel } from "./base.model"
 
-export interface User extends RowDataPacket {
-  id: number
-  email: string
-  password: string
-  name: string
-  preferences?: {
-    push_notification_enabled: boolean
-    email_notification_enabled: boolean
-  }
-  push_tokens?: string[]
-  created_at?: string
-  updated_at?: string
-}
-
-export type UserWithoutPassword = Omit<User, "password">
+const userRepository = UserDataSource.getRepository(UserEntity)
 
 export class AuthModel extends BaseModel {
   salt_rounds = 10
+  fastify: FastifyInstance
 
   constructor(fastify: FastifyInstance) {
-    super(fastify)
+    super()
+    this.fastify = fastify
   }
 
   register = async (data: Register) => {
     if (!data.password || data.password.length < 6)
       throw new AppError({
-        message: SYS_MESSAGES.INVALID_PASSWORD_FORMAT,
+        message: SYSTEM_MESSAGES.INVALID_PASSWORD_FORMAT,
         status_code: STATUS_CODES.BAD_REQUEST,
         code: ERROR_CODES.VALIDATION_ERROR,
       })
 
-    const existing_user = await this.find_by_email(data.email)
+    const user = await this.find_by_email(data.email)
 
-    if (existing_user)
+    if (user)
       throw new AppError({
-        message: SYS_MESSAGES.USER_ALREADY_EXISTS,
+        message: SYSTEM_MESSAGES.USER_ALREADY_EXISTS,
         status_code: STATUS_CODES.CONFLICT,
         code: ERROR_CODES.USER_ALREADY_EXISTS,
       })
 
     const hashed_password = await this.hash_password(data.password)
 
-    await this.fastify.mysql.query<ResultSetHeader>(
-      "INSERT INTO users (email, password, name) VALUES (?, ?, ?)",
-      [data.email, hashed_password, data.name],
-    )
+    const new_user = userRepository.create({
+      email: data.email,
+      password: hashed_password,
+      name: data.name,
+    })
 
-    const user = await this.find_by_email(data.email)
+    await userRepository.save(new_user)
 
-    const tokens = this.generate_tokens(user)
+    const tokens = this.generate_tokens(new_user)
 
     return {
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        ...(user.created_at && { created_at: user.created_at }),
-        ...(user.updated_at && { updated_at: user.updated_at }),
+        id: new_user.id,
+        email: new_user.email,
+        name: new_user.name,
+        ...(new_user.created_at && { created_at: new_user.created_at }),
+        ...(new_user.updated_at && { updated_at: new_user.updated_at }),
       },
       tokens,
     }
@@ -74,11 +63,15 @@ export class AuthModel extends BaseModel {
 
   login = async (data: Login) => {
     // Find user by email
-    const user = await this.find_by_email(data.email)
+    const user = await userRepository
+      .createQueryBuilder("user")
+      .where("user.email = :email", { email: data.email })
+      .addSelect("user.password")
+      .getOne()
 
     if (!user)
       throw new AppError({
-        message: SYS_MESSAGES.USER_NOT_FOUND,
+        message: SYSTEM_MESSAGES.USER_NOT_FOUND,
         status_code: STATUS_CODES.NOT_FOUND,
         code: ERROR_CODES.USER_NOT_FOUND,
       })
@@ -90,33 +83,24 @@ export class AuthModel extends BaseModel {
     )
     if (!is_password_valid)
       throw new AppError({
-        message: SYS_MESSAGES.INVALID_CREDENTIALS,
+        message: SYSTEM_MESSAGES.INVALID_CREDENTIALS,
         status_code: STATUS_CODES.BAD_REQUEST,
         code: ERROR_CODES.INVALID_CREDENTIALS,
       })
 
-    // Remove password from user object
-    const user_without_password: UserWithoutPassword = {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      ...(user.created_at && { created_at: user.created_at }),
-      ...(user.updated_at && { updated_at: user.updated_at }),
-    }
-
     // Generate tokens
-    const tokens = this.generate_tokens(user_without_password)
+    const tokens = this.generate_tokens(user)
 
     return {
       user: {
-        id: user_without_password.id,
-        email: user_without_password.email,
-        name: user_without_password.name,
-        ...(user_without_password.created_at && {
-          created_at: user_without_password.created_at,
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        ...(user.created_at && {
+          created_at: user.created_at,
         }),
-        ...(user_without_password.updated_at && {
-          updated_at: user_without_password.updated_at,
+        ...(user.updated_at && {
+          updated_at: user.updated_at,
         }),
       },
       tokens,
@@ -134,16 +118,17 @@ export class AuthModel extends BaseModel {
     return bcrypt.compare(password, hashed_password)
   }
 
-  generate_refresh_token(user: UserWithoutPassword): string {
+  generate_refresh_token(user: UserEntity): string {
     const payload = {
       sub: user.id,
       email: user.email,
       name: user.name,
     }
+
     return this.fastify.jwt.refresh.sign(payload)
   }
 
-  generate_access_token(user: UserWithoutPassword): string {
+  generate_access_token(user: UserEntity): string {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -153,7 +138,7 @@ export class AuthModel extends BaseModel {
     return this.fastify.jwt.access.sign(payload)
   }
 
-  generate_tokens(user: UserWithoutPassword) {
+  generate_tokens(user: UserEntity) {
     return {
       access_token: this.generate_access_token(user),
       refresh_token: this.generate_refresh_token(user),

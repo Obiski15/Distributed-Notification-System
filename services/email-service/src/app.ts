@@ -11,7 +11,7 @@ import error_handler from "@dns/shared/utils/error_handler.js"
 const app = Fastify({ logger: false })
 
 // Add logging middleware
-app.addHook("onRequest", logging_middleware)
+app.addHook("preHandler", logging_middleware)
 
 app.setNotFoundHandler((_request, reply) => {
   reply.status(STATUS_CODES.NOT_FOUND).send({

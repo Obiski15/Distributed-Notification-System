@@ -13,7 +13,7 @@ import template_routes from "./routes/template_route.js"
 const app = Fastify({ logger: false })
 
 // Add logging middleware
-app.addHook("onRequest", logging_middleware)
+app.addHook("preHandler", logging_middleware)
 
 await app.register(swagger, {
   openapi: {

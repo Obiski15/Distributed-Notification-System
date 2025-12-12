@@ -18,7 +18,7 @@ const app = Fastify({
 })
 
 // Add logging middleware
-app.addHook("onRequest", logging_middleware)
+app.addHook("preHandler", logging_middleware)
 
 await app.register(swagger, {
   openapi: {

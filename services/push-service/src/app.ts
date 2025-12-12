@@ -10,7 +10,7 @@ import Fastify, { FastifyReply, FastifyRequest } from "fastify"
 const app = Fastify({ logger: false })
 
 // Add logging middleware
-app.addHook("onRequest", logging_middleware)
+app.addHook("preHandler", logging_middleware)
 
 app.get(
   "/health",

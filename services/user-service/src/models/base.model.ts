@@ -1,54 +1,18 @@
-import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
-import * as SYS_MESSAGES from "@dns/shared/constants/system-message.js"
-import { RowDataPacket } from "@fastify/mysql"
+import { UserDataSource } from "../config/datasource"
+import { User as UserEntity } from "../entities/user-entity"
 
-import { FastifyInstance } from "fastify"
-
-import AppError from "@dns/shared/utils/AppError.js"
-
-interface User extends RowDataPacket {
-  id: string
-  email: string
-  password: string
-  name: string
-  preferences?: {
-    push_notification_enabled: boolean
-    email_notification_enabled: boolean
-  }
-  push_tokens?: string[]
-  created_at?: string
-  updated_at?: string
-}
-
-type UserWithoutPassword = Omit<User, "password" | "id">
-
+const userRepository = UserDataSource.getRepository(UserEntity)
 export class BaseModel {
-  constructor(protected fastify: FastifyInstance) {
-    this.fastify = fastify
+  find_by_id = async (id: string) => {
+    const user = await userRepository.findOne({
+      where: { id },
+    })
+
+    return user
   }
 
-  find_by_id = async (id: string): Promise<UserWithoutPassword> => {
-    const [[user]] = await this.fastify.mysql.query<User[]>(
-      "SELECT id, email, name, preferences, push_tokens, created_at, updated_at FROM users WHERE id = ?",
-      [id],
-    )
-
-    if (!user)
-      throw new AppError({
-        message: SYS_MESSAGES.USER_NOT_FOUND,
-        status_code: STATUS_CODES.NOT_FOUND,
-        code: ERROR_CODES.USER_NOT_FOUND,
-      })
-
-    return user as UserWithoutPassword
-  }
-
-  find_by_email = async (email: string): Promise<User> => {
-    const [[user]] = await this.fastify.mysql.query<User[]>(
-      "SELECT * FROM users WHERE email = ?",
-      [email],
-    )
-    return user as User
+  find_by_email = async (email: string) => {
+    const user = await userRepository.findOne({ where: { email } })
+    return user
   }
 }
