@@ -16,11 +16,9 @@
   "packageManager": "pnpm@10.20.0",
   "dependencies": {
     "@dns/shared": "workspace:*",
-    "mustache": "^4.2.0",
     "nodemailer": "^7.0.10"
   },
   "devDependencies": {
-    "@types/mustache": "^4.2.6",
     "@types/nodemailer": "^7.0.3"
   }
 }

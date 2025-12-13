@@ -1,15 +1,15 @@
-import logger from "@dns/shared/utils/logger.js"
+import logger from "@dns/shared/utils/logger"
 import { ConsumeMessage } from "amqplib"
 import mustache from "mustache"
 import type { SendMailOptions } from "nodemailer"
 
-import { config } from "@dns/shared/config/index.js"
+import { config } from "@dns/shared/config/index"
+import { fetch_template } from "@dns/shared/helpers/fetch_template"
+import update_notification_status from "@dns/shared/helpers/update_notification_status"
 import {
   close_rabbitmq_connection,
   get_rabbitmq_channel,
-} from "@dns/shared/utils/rabbitmq.js"
-import { fetch_template } from "../lib/helpers/fetch_template.js"
-import update_notification_status from "../lib/helpers/update_notification_status.js"
+} from "@dns/shared/utils/rabbitmq"
 
 interface EmailQueueMessage {
   template_code: string

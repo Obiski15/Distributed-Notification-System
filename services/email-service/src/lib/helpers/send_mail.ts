@@ -1,7 +1,7 @@
 import type { SendMailOptions, Transporter } from "nodemailer"
 import nodemailer from "nodemailer"
 
-import { config } from "@dns/shared/config/index.js"
+import { config } from "@dns/shared/config/index"
 
 let transporter: Transporter
 

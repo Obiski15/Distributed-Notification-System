@@ -1,26 +1,17 @@
-import { Type } from "class-transformer"
 import {
   IsArray,
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
-  ValidateNested,
 } from "class-validator"
 
 export enum NotificationType {
   EMAIL = "email",
   PUSH = "push",
-}
-
-export class UserDataDto {
-  @IsString()
-  name: string
-
-  @IsString()
-  link: string
 }
 
 export class CreateNotificationDto {
@@ -30,15 +21,15 @@ export class CreateNotificationDto {
 
   @IsUUID()
   @IsNotEmpty()
-  user: string
+  user_id: string
 
   @IsString()
   @IsNotEmpty()
   template_code: string
 
-  @ValidateNested()
-  @Type(() => UserDataDto)
-  variables: UserDataDto
+  @IsObject()
+  @IsNotEmpty()
+  variables: Record<string, string>
 
   @IsString()
   @IsNotEmpty()

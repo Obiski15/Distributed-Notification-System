@@ -1,7 +1,7 @@
 import axios from "axios"
-import { config } from "../config/index.js"
-import type { Service } from "../types/index.js"
-import circuit_breaker from "./circuit_breaker.js"
+import { config } from "../config/index"
+import type { Service } from "../types/index"
+import circuit_breaker from "./circuit_breaker"
 
 const discover_service = async (serviceName: string): Promise<Service> => {
   const breaker = circuit_breaker<Service>(async () => {

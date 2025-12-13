@@ -36,7 +36,7 @@ export class NotificationsService {
       notification_type,
       template_code,
       variables,
-      user: user_id,
+      user_id,
       request_id,
       priority,
     } = payload

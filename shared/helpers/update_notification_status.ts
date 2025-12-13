@@ -1,11 +1,12 @@
-import { config } from "@dns/shared/config/index.js"
-import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
-import AppError from "@dns/shared/utils/AppError.js"
 import axios, { AxiosError } from "axios"
+import { config } from "../config/index"
+import * as ERROR_CODES from "../constants/error-codes"
+import * as STATUS_CODES from "../constants/status-codes"
+import AppError from "../utils/AppError"
 
-import circuit_breaker from "@dns/shared/utils/circuit_breaker.js"
-import discover_service from "@dns/shared/utils/discover_service.js"
+import circuit_breaker from "../utils/circuit_breaker"
+import discover_service from "../utils/discover_service"
+import logger from "../utils/logger"
 
 interface NotificationOptions {
   request_id: string
@@ -41,6 +42,7 @@ const update_notification_status = async ({
             },
           },
         )
+        logger.info(`Notification status updated: ${request_id} -> ${status}`)
       } catch (error) {
         if (error instanceof AxiosError) throw error.response?.data
 

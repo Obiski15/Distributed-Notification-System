@@ -19,6 +19,11 @@ export const TEMPLATE_RETRIEVED = "Template retrieved successfully."
 export const TEMPLATE_UPDATED = "Template updated successfully."
 export const TEMPLATE_CREATED = "Template created successfully."
 export const TEMPLATE_DELETED = "Template deleted successfully."
+export const TEMPLATE_ALREADY_EXISTS =
+  "Template with this name and version already exists."
+export const TEMPLATE_NOT_FOUND = "Template not found."
+export const NO_VALID_TEMPLATE_UPDATE_FIELDS =
+  "No valid fields provided for update."
 
 // USERS/AUTH
 export const USER_RETRIEVED = "User retrieved successfully."
@@ -63,3 +68,11 @@ export const UNAUTHORIZED = "Unauthorized"
 
 // GATEWAY
 export const BAD_GATEWAY = "Error communicating with upstream service"
+
+// DATABASE
+export const DATABASE_INITIALIZATION_ERROR = "Database initialization failed."
+export const DATABASE_INITIALIZED = "Database initialized successfully."
+export const DATABASE_CONNECTION_CLOSE_ERROR =
+  "Error closing database connection."
+export const DATABASE_CONNECTION_CLOSED =
+  "Database connection closed successfully."

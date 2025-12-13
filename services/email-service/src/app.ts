@@ -2,16 +2,16 @@ import fastifySwagger from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
 
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
-import { logging_middleware } from "@dns/shared/middleware/logging.middleware.js"
-import health_schema from "@dns/shared/schemas/health-schema.js"
-import error_handler from "@dns/shared/utils/error_handler.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
+import { logging_middleware } from "@dns/shared/middleware/logging.middleware"
+import health_schema from "@dns/shared/schemas/health-schema"
+import error_handler from "@dns/shared/utils/error_handler"
 
 const app = Fastify({ logger: false })
 
 // Add logging middleware
-app.addHook("onRequest", logging_middleware)
+app.addHook("preHandler", logging_middleware)
 
 app.setNotFoundHandler((_request, reply) => {
   reply.status(STATUS_CODES.NOT_FOUND).send({

@@ -1,11 +1,16 @@
-import base_response from "@dns/shared/schemas/base-response.js"
-import error_response_schema from "@dns/shared/schemas/error-response-schema.js"
+import base_response from "@dns/shared/schemas/base-response"
+import error_response_schema from "@dns/shared/schemas/error-response-schema"
 
 const shared_template_properties = {
-  id: { type: "number" },
+  id: { type: "string", format: "uuid" },
   name: { type: "string" },
+  type: { type: "string", enum: ["EMAIL", "PUSH"] },
   subject: { type: ["string", "null"] },
   body: { type: ["string", "null"] },
+  image_url: { type: ["string", "null"] },
+  action_url: { type: ["string", "null"] },
+  metadata: { type: ["object", "null"], additionalProperties: true },
+  version: { type: "number" },
   created_at: { type: "string" },
   updated_at: { type: "string" },
 }
@@ -25,7 +30,6 @@ export const templates_schema = {
               type: "array",
               items: {
                 type: "object",
-                additionalProperties: true,
                 properties: shared_template_properties,
               },
             },
@@ -44,7 +48,7 @@ export const templates_schema = {
 }
 
 export const template_schema = {
-  description: "Get template by code",
+  description: "Get template by code or ID",
   tags: ["Templates"],
   params: {
     type: "object",
@@ -58,7 +62,6 @@ export const template_schema = {
         ...base_response,
         data: {
           type: "object",
-          additionalProperties: true,
           properties: shared_template_properties,
         },
       },
@@ -73,11 +76,15 @@ export const create_template_schema = {
   tags: ["Templates"],
   body: {
     type: "object",
-    required: ["name", "subject", "body"],
+    required: ["name", "subject", "body", "type"],
     properties: {
       name: { type: "string" },
+      type: { type: "string", enum: ["EMAIL", "PUSH"] },
       subject: { type: "string" },
       body: { type: "string" },
+      image_url: { type: "string" },
+      action_url: { type: "string" },
+      metadata: { type: "object", additionalProperties: true },
     },
   },
   response: {
@@ -87,7 +94,6 @@ export const create_template_schema = {
         ...base_response,
         data: {
           type: "object",
-          additionalProperties: true,
           properties: shared_template_properties,
         },
       },
@@ -101,8 +107,8 @@ export const update_template_schema = {
   tags: ["Templates"],
   params: {
     type: "object",
-    required: ["template_code"],
-    properties: { template_code: { type: "string" } },
+    required: ["template_id"],
+    properties: { template_id: { type: "string" } },
   },
   body: {
     type: "object",
@@ -110,6 +116,10 @@ export const update_template_schema = {
       name: { type: "string" },
       subject: { type: "string" },
       body: { type: "string" },
+      image_url: { type: "string" },
+      action_url: { type: "string" },
+      metadata: { type: "object", additionalProperties: true },
+      type: { type: "string", enum: ["EMAIL", "PUSH"] },
     },
     additionalProperties: false,
   },
@@ -120,7 +130,7 @@ export const update_template_schema = {
         ...base_response,
         data: {
           type: "object",
-          additionalProperties: true,
+          properties: shared_template_properties,
         },
       },
     },
@@ -134,8 +144,8 @@ export const delete_template_schema = {
   tags: ["Templates"],
   params: {
     type: "object",
-    required: ["template_code"],
-    properties: { template_code: { type: "string" } },
+    required: ["template_id"],
+    properties: { template_id: { type: "string" } },
   },
   response: {
     200: {

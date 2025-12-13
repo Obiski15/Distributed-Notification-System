@@ -1,6 +1,6 @@
 import axios from "axios"
-import { config as config_vars } from "../config/index.js"
-import logger from "./logger.js"
+import { config as config_vars } from "../config/index"
+import logger from "./logger"
 
 interface ConsulServiceConfig {
   service_name: string

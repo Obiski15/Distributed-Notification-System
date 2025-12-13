@@ -1,9 +1,9 @@
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
 import type { FastifyInstance } from "fastify"
 
-import { AuthModel } from "../models/auth.model.js"
-import { login_schema, register_schema } from "../schemas/auth.schema.js"
+import { AuthModel } from "../models/auth.model"
+import { login_schema, register_schema } from "../schemas/auth.schema"
 
 // eslint-disable-next-line
 const auth_routes = async (fastify: FastifyInstance) => {

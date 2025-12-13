@@ -1,18 +1,32 @@
-import { config } from "@dns/shared/config/index.js"
-import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
-import AppError from "@dns/shared/utils/AppError.js"
-import circuit_breaker from "@dns/shared/utils/circuit_breaker.js"
 import axios, { AxiosError } from "axios"
+import { config } from "../config/index"
+import * as ERROR_CODES from "../constants/error-codes"
+import * as STATUS_CODES from "../constants/status-codes"
+import AppError from "../utils/AppError"
+import circuit_breaker from "../utils/circuit_breaker"
+import discover_service from "../utils/discover_service"
 
-import discover_service from "@dns/shared/utils/discover_service.js"
-interface Template {
-  body: string
+export enum TemplateType {
+  EMAIL = "EMAIL",
+  PUSH = "PUSH",
+}
+
+export interface ITemplate {
+  id: string
+  name: string
+  type: TemplateType
   subject: string
+  body: string
+  image_url: string | null
+  action_url: string | null
+  metadata: Record<string, any> | null
+  version: number
+  created_at: Date
+  updated_at: Date
 }
 
 export const fetch_template = (template_code: string) => {
-  const template = circuit_breaker<Template>(async () => {
+  const template = circuit_breaker<ITemplate>(async () => {
     try {
       const service = await discover_service(config.TEMPLATE_SERVICE)
 
@@ -20,7 +34,7 @@ export const fetch_template = (template_code: string) => {
         service.ServiceAddress || service.Address
       }:${service.ServicePort}/api/v1/templates/${template_code}`
 
-      const res = await axios.get<{ data: Template }>(url)
+      const res = await axios.get<{ data: ITemplate }>(url)
 
       return res.data.data
     } catch (error) {

@@ -8,6 +8,7 @@ export const sensitive_fields = [
   "api_key",
   "secret",
   "apikey",
+  "x-api-key",
   "auth",
 ]
 

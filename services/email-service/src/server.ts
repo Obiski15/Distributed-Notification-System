@@ -1,14 +1,14 @@
-import { config } from "@dns/shared/config/index.js"
+import { config } from "@dns/shared/config/index"
 import {
   deregister_consul_service,
   register_consul_service,
-} from "@dns/shared/utils/consul.js"
-import { setup_graceful_shutdown } from "@dns/shared/utils/graceful-shutdown.js"
-import logger from "@dns/shared/utils/logger.js"
+} from "@dns/shared/utils/consul"
+import { setup_graceful_shutdown } from "@dns/shared/utils/graceful-shutdown"
+import logger from "@dns/shared/utils/logger"
 
-import app from "./app.js"
-import send_mail from "./lib/helpers/send_mail.js"
-import { close_connection, consume_queue } from "./queue/rabbitmq.js"
+import app from "./app"
+import send_mail from "./lib/helpers/send_mail"
+import { close_connection, consume_queue } from "./queue/rabbitmq"
 
 const consul_config = {
   service_name: config.EMAIL_SERVICE,

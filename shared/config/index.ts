@@ -1,4 +1,5 @@
-import "./load-env.js"
+import breaker_filter from "../utils/breaker_filter"
+import "./load-env"
 
 const is_dev = process.env.NODE_ENV === "development"
 const is_prod = process.env.NODE_ENV === "production"
@@ -56,6 +57,9 @@ export const config = {
   FCM_PRIVATE_KEY: process.env.FCM_PRIVATE_KEY!,
   FCM_PRIVATE_KEY_ID: process.env.FCM_PRIVATE_KEY_ID!,
 
+  // ORIGINS
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS?.split(",") || [],
+
   // SMTP
   SMTP_FROM: "<hng.notification@gmail.com>",
   SMTP_USER: process.env.SMTP_USER!,
@@ -70,22 +74,13 @@ export const config = {
         resetTimeout: 1000,
         errorThresholdPercentage: 50,
         volumeThreshold: 1,
-        errorFilter: (err: any) => {
-          // Only count 5xx errors
-          const status = err?.response?.status || err?.status
-          return !status || status >= 500
-        },
+        errorFilter: breaker_filter,
       }
     : {
         timeout: 3000,
         resetTimeout: 30000,
         errorThresholdPercentage: 20,
         volumeThreshold: 10,
-        errorFilter: (err: any) => {
-          // Only count 5xx errors, timeouts, and network errors
-          // Do NOT count 4xx errors (client errors)
-          const status = err?.response?.status || err?.status
-          return !status || status >= 500
-        },
+        errorFilter: breaker_filter,
       },
 }
