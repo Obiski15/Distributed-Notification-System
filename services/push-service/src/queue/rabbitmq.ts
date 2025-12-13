@@ -1,15 +1,18 @@
 import { ConsumeMessage } from "amqplib"
-import {
-  validate_device_token,
-  type PushNotificationPayload,
-} from "../utils/send_push.js"
+import mustache from "mustache"
 
-import { config } from "@dns/shared/config/index.js"
-import logger from "@dns/shared/utils/logger.js"
+import { config } from "@dns/shared/config/index"
+import { fetch_template } from "@dns/shared/helpers/fetch_template"
+import logger from "@dns/shared/utils/logger"
 import {
   close_rabbitmq_connection,
   get_rabbitmq_channel,
-} from "@dns/shared/utils/rabbitmq.js"
+} from "@dns/shared/utils/rabbitmq"
+
+import {
+  validate_device_token,
+  type PushNotificationPayload,
+} from "../utils/send_push"
 
 export const get_channel = () =>
   get_rabbitmq_channel(config.RABBITMQ_CONNECTION_URL)
@@ -74,7 +77,7 @@ export const consume_queue = async (
             priority: number
             user_id?: string
             title?: string
-            metadata?: Record<string, string>
+            variables?: Record<string, string>
           }
 
           if (
@@ -94,14 +97,29 @@ export const consume_queue = async (
               return null
             }
 
+            const template = await fetch_template(data.template_code)
+
+            const html = mustache.render(
+              template.body || "",
+              data.variables || {},
+            )
+            const subject = mustache.render(
+              template.subject || "",
+              data.variables || {},
+            )
+            const action_url = mustache.render(
+              template.action_url || "",
+              data.variables || {},
+            )
+
             const pushPayload: PushNotificationPayload = {
               token,
-              title: "Notification",
-              body: "You have a new notification",
-              image: `https://picsum.photos/${randomNumber(500, 599)}`,
-              link: "https://example.com",
+              title: subject,
+              body: html,
+              image: template.image_url!,
+              link: action_url || "",
               data: {
-                ...data.metadata,
+                ...(template.metadata || {}),
                 ...(data.user_id && { user_id: data.user_id }),
                 template_code: data.template_code,
               },
@@ -158,8 +176,4 @@ export const consume_queue = async (
       })()
     }
   })
-}
-
-const randomNumber = (min: number, max: number) => {
-  return Math.floor(Math.random() * (max - min + 1)) + min
 }
