@@ -1,12 +1,12 @@
 import axios, { AxiosError } from "axios"
-import { config } from "../config/index.js"
-import * as ERROR_CODES from "../constants/error-codes.js"
-import * as STATUS_CODES from "../constants/status-codes.js"
-import AppError from "../utils/AppError.js"
+import { config } from "../config/index"
+import * as ERROR_CODES from "../constants/error-codes"
+import * as STATUS_CODES from "../constants/status-codes"
+import AppError from "../utils/AppError"
 
-import circuit_breaker from "../utils/circuit_breaker.js"
-import discover_service from "../utils/discover_service.js"
-import logger from "../utils/logger.js"
+import circuit_breaker from "../utils/circuit_breaker"
+import discover_service from "../utils/discover_service"
+import logger from "../utils/logger"
 
 interface NotificationOptions {
   request_id: string

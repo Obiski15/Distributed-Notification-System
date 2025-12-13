@@ -1,7 +1,7 @@
 import * as ERROR_CODES from "@dns/shared/constants/error-codes"
 import * as STATUS_CODES from "@dns/shared/constants/status-codes"
 import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
-import AppError from "@dns/shared/utils/AppError.js"
+import AppError from "@dns/shared/utils/AppError"
 import { TemplateDataSource } from "../config/datasource"
 import { Template, TemplateType } from "../entities/template-entity"
 

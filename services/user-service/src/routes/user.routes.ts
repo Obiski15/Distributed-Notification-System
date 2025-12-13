@@ -1,17 +1,17 @@
 import { FastifyInstance, FastifyRequest } from "fastify"
 
-import * as ERROR_CODES from "@dns/shared/constants/error-codes.js"
-import * as STATUS_CODES from "@dns/shared/constants/status-codes.js"
-import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message.js"
-import AppError from "@dns/shared/utils/AppError.js"
+import * as ERROR_CODES from "@dns/shared/constants/error-codes"
+import * as STATUS_CODES from "@dns/shared/constants/status-codes"
+import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
+import AppError from "@dns/shared/utils/AppError"
 
-import { UserModel } from "../models/user.model.js"
+import { UserModel } from "../models/user.model"
 import {
   push_token_schema,
   update_preferences_schema,
   update_user_schema,
   user_schema,
-} from "../schemas/user.schema.js"
+} from "../schemas/user.schema"
 
 const user_id = (request: FastifyRequest) => {
   return request.headers["x-user-id"] as string

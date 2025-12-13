@@ -1,5 +1,5 @@
-import breaker_filter from "../utils/breaker_filter.js"
-import "./load-env.js"
+import breaker_filter from "../utils/breaker_filter"
+import "./load-env"
 
 const is_dev = process.env.NODE_ENV === "development"
 const is_prod = process.env.NODE_ENV === "production"

@@ -1,22 +1,22 @@
-import * as statusCodes from "@dns/shared/constants/status-codes.js"
-import * as sysMsg from "@dns/shared/constants/system-message.js"
+import * as statusCodes from "@dns/shared/constants/status-codes"
+import * as sysMsg from "@dns/shared/constants/system-message"
 import { type FastifyInstance } from "fastify"
 
-import { Template } from "../entities/template-entity.js"
+import { Template } from "../entities/template-entity"
 import {
   create_template,
   delete_template,
   find_all_templates,
   find_template,
   update_template,
-} from "../models/template.model.js"
+} from "../models/template.model"
 import {
   create_template_schema,
   delete_template_schema,
   template_schema,
   templates_schema,
   update_template_schema,
-} from "../schemas/template.schema.js"
+} from "../schemas/template.schema"
 
 const template_routes = (fastify: FastifyInstance) => {
   fastify.get(
