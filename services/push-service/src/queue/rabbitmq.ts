@@ -3,6 +3,7 @@ import mustache from "mustache"
 
 import { config } from "@dns/shared/config/index"
 import { fetch_template } from "@dns/shared/helpers/fetch_template"
+import update_notification_status from "@dns/shared/helpers/update_notification_status"
 import logger from "@dns/shared/utils/logger"
 import {
   close_rabbitmq_connection,
@@ -13,6 +14,15 @@ import {
   validate_device_token,
   type PushNotificationPayload,
 } from "../utils/send_push"
+
+interface PushQueueMessage {
+  template_code: string
+  push_tokens: string[]
+  priority: number
+  user_id?: string
+  request_id: string
+  variables?: Record<string, string>
+}
 
 export const get_channel = () =>
   get_rabbitmq_channel(config.RABBITMQ_CONNECTION_URL)
@@ -68,18 +78,10 @@ export const consume_queue = async (
 
   await ch.consume(`${mainKey}.queue`, (msg: ConsumeMessage | null) => {
     if (msg) {
+      const data = JSON.parse(msg.content.toString()) as PushQueueMessage
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       ;(async () => {
         try {
-          const data = JSON.parse(msg.content.toString()) as {
-            template_code: string
-            push_tokens: string[]
-            priority: number
-            user_id?: string
-            title?: string
-            variables?: Record<string, string>
-          }
-
           if (
             !Array.isArray(data.push_tokens) ||
             data.push_tokens.length === 0
@@ -144,6 +146,10 @@ export const consume_queue = async (
           logger.info(
             `✅ Batch processed for ${data.push_tokens.length} tokens`,
           )
+          await update_notification_status({
+            status: "delivered",
+            request_id: data.request_id,
+          })
         } catch (error) {
           if (error instanceof SyntaxError) {
             logger.error(
@@ -170,6 +176,11 @@ export const consume_queue = async (
             ch.ack(msg)
           } else {
             logger.error(error, `💀 Max retries. Sending to Dead Letter.`)
+            await update_notification_status({
+              status: "failed",
+              request_id: data.request_id,
+              error: (error as Error)?.message ?? "Unknown error",
+            })
             ch.nack(msg, false, false)
           }
         }

@@ -74,6 +74,7 @@ export class AuthGuard implements CanActivate {
     const user = await this.userService.get_user(payload?.sub)
 
     request["user"] = user
+    request.headers["x-user-id"] = user.id
 
     return true
   }

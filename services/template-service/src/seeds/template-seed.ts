@@ -90,6 +90,10 @@ const wrapEmail = (
 </body>
 </html>
 `
+
+const randomNumber = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 ;(async () => {
   try {
@@ -166,7 +170,7 @@ const wrapEmail = (
         type: TemplateType.PUSH,
         subject: "New Message from {{sender_name}}",
         body: "{{message_preview}}",
-        image_url: "https://cdn.myapp.com/assets/icons/chat_bubble.png",
+        image_url: `https://picsum.photos/${randomNumber(500, 599)}`,
         action_url: "myapp://chat/{{chat_id}}",
         metadata: {
           click_action: "FLUTTER_NOTIFICATION_CLICK",
@@ -180,7 +184,7 @@ const wrapEmail = (
         type: TemplateType.PUSH,
         subject: "Order Shipped! 📦",
         body: "Your order #{{order_id}} is on its way. Track it now.",
-        image_url: "https://cdn.myapp.com/assets/images/delivery_truck.jpg",
+        image_url: `https://picsum.photos/${randomNumber(600, 699)}`,
         action_url: "myapp://orders/{{order_id}}",
         metadata: {
           channel_id: "orders",
@@ -192,7 +196,7 @@ const wrapEmail = (
         type: TemplateType.PUSH,
         subject: "Flash Sale Alert! ⚡",
         body: "Get 50% off on all {{category}} items. Offer ends in 2 hours!",
-        image_url: "https://cdn.myapp.com/assets/banners/flash_sale.jpg",
+        image_url: `https://picsum.photos/${randomNumber(700, 799)}`,
         action_url: "myapp://shop/category/{{category_id}}",
         metadata: {
           channel_id: "marketing",
