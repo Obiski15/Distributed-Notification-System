@@ -2,7 +2,6 @@ import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
 import Fastify from "fastify"
 
-import { config } from "@dns/shared/config/index"
 import * as STATUS_CODES from "@dns/shared/constants/status-codes"
 import * as SYSTEM_MESSAGES from "@dns/shared/constants/system-message"
 import { logging_middleware } from "@dns/shared/middleware/logging.middleware"
@@ -21,7 +20,6 @@ await app.register(swagger, {
       title: "Template Service",
       version: "1.0.0",
     },
-    servers: [{ url: "http://localhost:" + config.TEMPLATE_SERVICE_PORT }],
   },
 })
 

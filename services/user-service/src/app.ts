@@ -26,7 +26,6 @@ await app.register(swagger, {
       title: "User Service",
       version: "1.0.0",
     },
-    servers: [{ url: "http://localhost:" + config.USER_SERVICE_PORT }],
   },
 })
 
