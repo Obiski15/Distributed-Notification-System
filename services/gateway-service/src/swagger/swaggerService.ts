@@ -40,18 +40,16 @@ export class SwaggerGateway {
         },
         "JWT-auth",
       )
+      .addSecurityRequirements("JWT-auth")
       .addTag("Notifications", "Send and manage notifications")
       .build()
 
-    // Generate gateway's document
     const gatewayDocument = SwaggerModule.createDocument(app, swaggerConfig)
 
-    // Endpoint to serve merged Swagger JSON dynamically
     fastifyApp.get(
       "/docs/json",
       async (_request: FastifyRequest, reply: FastifyReply) => {
         try {
-          // Check Redis cache first
           const cachedSpec = await this.cache.get<Record<string, any>>(
             this.CACHE_KEY,
           )
@@ -64,7 +62,6 @@ export class SwaggerGateway {
 
           logger.info("🔄 Fetching fresh Swagger specs from microservices")
 
-          // Only fetch docs from services that have HTTP APIs
           const serviceConfigs = [
             {
               name: config_vars.TEMPLATE_SERVICE,
@@ -76,7 +73,6 @@ export class SwaggerGateway {
             },
           ]
 
-          // Fetch Swagger specs
           const specs = await Promise.all(
             serviceConfigs.map(async ({ name }) => {
               try {
@@ -98,37 +94,43 @@ export class SwaggerGateway {
                 logger.warn(
                   `⚠️ Could not fetch Swagger from ${name}: ${error.message}`,
                 )
-                // Skip this service silently
                 return {}
               }
             }),
           )
 
-          // Merge the Swagger specs including gateway's own document
+          // Merge all specs
           const mergedSpec = [gatewayDocument, ...specs].reduce(
             (acc, spec) => merge(acc, spec) as Record<string, any>,
             {
               openapi: "3.0.3",
-              info: {
-                title: "DNS Unified API Documentation",
-                version: "1.0.0",
-                description:
-                  "Complete API documentation for DNS Gateway and all microservices",
-              },
               paths: {},
-              components: {},
+              components: {
+                securitySchemes: {
+                  "JWT-auth": {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT",
+                  },
+                },
+              },
+              security: [
+                {
+                  "JWT-auth": [],
+                },
+              ],
             } as Record<string, any>,
           )
 
-          // Override servers to use gateway URL instead of individual service URLs
-          mergedSpec.servers = [
-            {
-              url: `http://localhost:${config_vars.GATEWAY_SERVICE_PORT}`,
-              description: "Gateway Server",
-            },
-          ]
+          // This runs after the reduce() to ensure microservices don't overwrite the title
+          mergedSpec.info = {
+            title: "DNS Unified API Documentation",
+            version: "1.0.0",
+            description:
+              "Complete API documentation for DNS Gateway and all microservices",
+          }
 
-          // Cache in Redis with TTL
+          // CACHE in Redis
           await this.cache.set(this.CACHE_KEY, mergedSpec, this.CACHE_TTL_MS)
           logger.info("💾 Cached merged Swagger spec in Redis")
 
@@ -141,13 +143,11 @@ export class SwaggerGateway {
       },
     )
 
-    // Setup Swagger UI to load spec from URL instead of inline
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     SwaggerModule.setup("docs", app, null as any, {
       customSiteTitle: "DNS API Documentation",
       customCss: ".swagger-ui .topbar { display: none }",
       swaggerOptions: {
-        url: "/docs/json", // Points to merged JSON
+        url: "/docs/json",
         persistAuthorization: true,
         docExpansion: "list",
         filter: true,
